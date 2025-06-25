@@ -6,14 +6,21 @@ struct TransactionListView: View {
     @State private var searchText = ""
     @State private var customStartDate = Calendar.current.startOfDay(for: Date())
     @State private var customEndDate = Date()
+    @State private var selectedType: TransactionType? = nil
 
     private var filteredTransactions: [Transaction] {
         let transactions = dataManager.getTransactions(for: selectedPeriod, customStartDate: customStartDate, customEndDate: customEndDate)
 
+        var filtered = transactions
+        
+        if let type = selectedType {
+            filtered = filtered.filter { $0.type == type }
+        }
+
         if searchText.isEmpty {
-            return transactions.sorted { $0.date > $1.date }
+            return filtered.sorted { $0.date > $1.date }
         } else {
-            return transactions.filter { transaction in
+            return filtered.filter { transaction in
                 transaction.note.localizedCaseInsensitiveContains(searchText) ||
                 transaction.category.displayName(for: dataManager).localizedCaseInsensitiveContains(searchText)
             }.sorted { $0.date > $1.date }
@@ -49,6 +56,42 @@ struct TransactionListView: View {
                 customStartDate: $customStartDate,
                 customEndDate: $customEndDate
             )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+            
+            // 收入/支出类型筛选器
+            HStack(spacing: 12) {
+                Button(action: {
+                    selectedType = nil
+                }) {
+                    Text(LocalizedString("all"))
+                        .font(.system(.subheadline, weight: .medium))
+                        .foregroundColor(selectedType == nil ? .white : .primary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(selectedType == nil ? Color.blue : Color(.systemGray6))
+                        )
+                }
+                
+                ForEach([TransactionType.expense, TransactionType.income], id: \.self) { type in
+                    Button(action: {
+                        selectedType = type
+                    }) {
+                        Text(type.displayName)
+                            .font(.system(.subheadline, weight: .medium))
+                            .foregroundColor(selectedType == type ? .white : .primary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(selectedType == type ? type.color : Color(.systemGray6))
+                            )
+                    }
+                }
+                Spacer()
+            }
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
 

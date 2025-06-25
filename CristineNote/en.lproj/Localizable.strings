@@ -1,4 +1,5 @@
 /* General Text */
+"all" = "All";
 "income" = "Income";
 "expense" = "Expense";
 "balance" = "Net Income";

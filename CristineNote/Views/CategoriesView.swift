@@ -15,10 +15,7 @@ struct CategoriesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 类型选择器
-            CategoryTypeSelector(selectedType: $selectedType)
-
-            // 添加分类按钮
+            // 添加分类按钮 - 移到第一行
             HStack {
                 Spacer()
                 Button(action: {
@@ -41,7 +38,11 @@ struct CategoriesView: View {
                 Spacer()
             }
             .padding(.horizontal)
+            .padding(.top, 8)
             .padding(.bottom, 12)
+
+            // 类型选择器 - 移到第二行
+            CategoryTypeSelector(selectedType: $selectedType)
 
             // 分类列表
             if categories.isEmpty {

@@ -10,14 +10,7 @@ struct StatisticsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // 周期选择器
-                PeriodSelector(
-                    selectedPeriod: $selectedPeriod,
-                    customStartDate: $customStartDate,
-                    customEndDate: $customEndDate
-                )
-
-                // 支出/收入类型选择器
+                // 支出/收入类型选择器 - 移到第一行
                 HStack(spacing: 12) {
                     ForEach([TransactionType.expense, TransactionType.income], id: \.self) { type in
                         Button(action: {
@@ -37,6 +30,13 @@ struct StatisticsView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
+
+                // 周期选择器 - 移到第二行
+                PeriodSelector(
+                    selectedPeriod: $selectedPeriod,
+                    customStartDate: $customStartDate,
+                    customEndDate: $customEndDate
+                )
 
                 // 统计概览卡片
                 StatisticsOverviewCard(
