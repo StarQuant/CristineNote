@@ -5,13 +5,27 @@ struct StatisticsView: View {
     @State private var selectedPeriod: StatisticsPeriod = .thisMonth
     @State private var customStartDate = Calendar.current.startOfDay(for: Date())
     @State private var customEndDate = Date()
-    @State private var selectedType: TransactionType = .expense
+    @State private var selectedType: TransactionType? = nil
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // 支出/收入类型选择器 - 移到第一行
+                // 支出/收入类型选择器 - 移到第一行，增加"全部"选项
                 HStack(spacing: 12) {
+                    Button(action: {
+                        selectedType = nil
+                    }) {
+                        Text(LocalizedString("all"))
+                            .font(.system(.subheadline, weight: .medium))
+                            .foregroundColor(selectedType == nil ? .white : .primary)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(selectedType == nil ? Color.blue : Color(.systemGray6))
+                            )
+                    }
+                    
                     ForEach([TransactionType.expense, TransactionType.income], id: \.self) { type in
                         Button(action: {
                             selectedType = type
@@ -56,7 +70,7 @@ struct StatisticsView: View {
                     period: selectedPeriod,
                     customStartDate: customStartDate,
                     customEndDate: customEndDate,
-                    transactionType: selectedType
+                    transactionType: selectedType ?? .expense
                 )
                 .environmentObject(dataManager)
             }
@@ -65,18 +79,34 @@ struct StatisticsView: View {
     }
 
     private func getStatisticsData() -> [(category: TransactionCategory, amount: Double)] {
-        if selectedType == .expense {
-            return dataManager.getCategoryExpenses(
-                for: selectedPeriod,
-                customStartDate: customStartDate,
-                customEndDate: customEndDate
-            )
+        if let type = selectedType {
+            // 选择了特定类型
+            if type == .expense {
+                return dataManager.getCategoryExpenses(
+                    for: selectedPeriod,
+                    customStartDate: customStartDate,
+                    customEndDate: customEndDate
+                )
+            } else {
+                return dataManager.getCategoryIncome(
+                    for: selectedPeriod,
+                    customStartDate: customStartDate,
+                    customEndDate: customEndDate
+                )
+            }
         } else {
-            return dataManager.getCategoryIncome(
+            // 选择了全部，合并收入和支出数据
+            let expenses = dataManager.getCategoryExpenses(
                 for: selectedPeriod,
                 customStartDate: customStartDate,
                 customEndDate: customEndDate
             )
+            let incomes = dataManager.getCategoryIncome(
+                for: selectedPeriod,
+                customStartDate: customStartDate,
+                customEndDate: customEndDate
+            )
+            return expenses + incomes
         }
     }
 }

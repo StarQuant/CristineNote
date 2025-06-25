@@ -49,17 +49,8 @@ struct TransactionListView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 16)
-
-            // 周期选择器
-            PeriodSelector(
-                selectedPeriod: $selectedPeriod,
-                customStartDate: $customStartDate,
-                customEndDate: $customEndDate
-            )
-            .padding(.horizontal, 16)
-            .padding(.bottom, 12)
             
-            // 收入/支出类型筛选器
+            // 收入/支出类型筛选器 - 移到顶部
             HStack(spacing: 12) {
                 Button(action: {
                     selectedType = nil
@@ -90,6 +81,18 @@ struct TransactionListView: View {
                             )
                     }
                 }
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+
+            // 周期选择器 - 移到类型选择器下方，左对齐
+            HStack {
+                PeriodSelector(
+                    selectedPeriod: $selectedPeriod,
+                    customStartDate: $customStartDate,
+                    customEndDate: $customEndDate
+                )
                 Spacer()
             }
             .padding(.horizontal, 16)
