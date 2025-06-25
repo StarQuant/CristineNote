@@ -209,6 +209,21 @@
 "sync_merging_data" = "Merging data completed...";
 "sync_error_occurred" = "Error occurred during sync";
 
+/* Error Handling */
+"error_details" = "Error Details";
+"solutions" = "💡 Solutions:";
+"retry" = "Retry";
+"reset" = "Reset";
+"wait_and_retry" = "• Wait a moment and try again";
+"close_other_apps" = "• Close other network discovery apps";
+"restart_wifi" = "• Restart WiFi connection";
+"click_reset_button" = "• Click reset button to reinitialize";
+"restart_app_if_persist" = "• Restart app if problem persists";
+"check_ios_version" = "• Ensure iOS version supports MultipeerConnectivity";
+"check_network_permissions" = "• Check network permission settings";
+"restart_wifi_bluetooth" = "• Try restarting WiFi or Bluetooth";
+"check_network_connection" = "• Check network connection";
+
 /* Common UI */
 "cancel" = "Cancel";
 "save" = "Save";

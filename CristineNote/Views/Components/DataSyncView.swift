@@ -255,27 +255,27 @@ struct DataStatsCard: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            Text("本地数据概览")
+            Text(LocalizedString("local_data_overview"))
                 .font(.headline)
                 .fontWeight(.semibold)
             
             HStack(spacing: 20) {
                 StatItem(
-                    title: "交易记录",
+                    title: LocalizedString("transaction_records"),
                     value: "\(dataManager.transactions.count)",
                     icon: "list.bullet.rectangle",
                     color: .blue
                 )
                 
                 StatItem(
-                    title: "支出分类",
+                    title: LocalizedString("expense_categories"),
                     value: "\(dataManager.expenseCategories.count)",
                     icon: "folder.fill",
                     color: .red
                 )
                 
                 StatItem(
-                    title: "收入分类", 
+                    title: LocalizedString("income_categories"), 
                     value: "\(dataManager.incomeCategories.count)",
                     icon: "folder.fill",
                     color: .green
@@ -361,7 +361,7 @@ struct SyncStatusCard: View {
             HStack {
                 Image(systemName: getStatusIcon())
                     .foregroundColor(getStatusColor())
-                Text("同步状态")
+                Text(LocalizedString("sync_status"))
                     .font(.headline)
                     .fontWeight(.semibold)
                 Spacer()
@@ -386,7 +386,7 @@ struct SyncStatusCard: View {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.orange)
-                        Text("错误详情")
+                        Text(LocalizedString("error_details"))
                             .font(.subheadline)
                             .fontWeight(.medium)
                         Spacer()
@@ -401,28 +401,28 @@ struct SyncStatusCard: View {
                     // 根据错误类型提供具体的解决建议
                     if let syncError = error as? SyncError {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("💡 解决建议:")
+                            Text(LocalizedString("solutions"))
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.orange)
                             
                             switch syncError {
                             case .bonjourServiceConflict:
-                                Text("• 稍等片刻后重试")
-                                Text("• 关闭其他网络发现应用")
-                                Text("• 重启WiFi连接")
+                                Text(LocalizedString("wait_and_retry"))
+                                Text(LocalizedString("close_other_apps"))
+                                Text(LocalizedString("restart_wifi"))
                             case .componentReuseError:
-                                Text("• 点击重置按钮重新初始化")
-                                Text("• 如果问题持续，请重启应用")
-                                Text("• 确保iOS系统版本支持MultipeerConnectivity")
+                                Text(LocalizedString("click_reset_button"))
+                                Text(LocalizedString("restart_app_if_persist"))
+                                Text(LocalizedString("check_ios_version"))
                             case .networkServiceUnavailable:
-                                Text("• 检查网络权限设置")
-                                Text("• 尝试重启WiFi或蓝牙")
-                                Text("• 点击重置按钮重新初始化")
+                                Text(LocalizedString("check_network_permissions"))
+                                Text(LocalizedString("restart_wifi_bluetooth"))
+                                Text(LocalizedString("click_reset_button"))
                             default:
-                                Text("• 稍等片刻后重试")
-                                Text("• 检查网络连接")
-                                Text("• 点击重置按钮重新初始化")
+                                Text(LocalizedString("wait_and_retry"))
+                                Text(LocalizedString("check_network_connection"))
+                                Text(LocalizedString("click_reset_button"))
                             }
                         }
                         .font(.caption)
@@ -431,13 +431,13 @@ struct SyncStatusCard: View {
                     }
                     
                     HStack(spacing: 12) {
-                        Button("重试") {
+                        Button(LocalizedString("retry")) {
                             syncService.retryLastOperation()
                         }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.roundedRectangle)
                         
-                        Button("重置") {
+                        Button(LocalizedString("reset")) {
                             syncService.resetCompletely()
                         }
                         .buttonStyle(.bordered)
