@@ -1,0 +1,217 @@
+/* General Text */
+"income" = "Income";
+"expense" = "Expense";
+"balance" = "Net Income";
+"net_income" = "Net Income";
+"total_income" = "Income";
+"total_expense" = "Expense";
+"surplus" = "Balance";
+"add" = "Add";
+"edit" = "Edit";
+"delete" = "Delete";
+"cancel" = "Cancel";
+"save" = "Save";
+"confirm" = "Confirm";
+"done" = "Done";
+"ok" = "OK";
+"settings" = "Settings";
+
+/* Time Periods */
+"today" = "Today";
+"this_week" = "This Week";
+"this_month" = "This Month";
+"custom" = "Custom";
+"all_time" = "All Time";
+"start_date" = "Start Date";
+"end_date" = "End Date";
+"selected_range" = "Selected Range";
+"custom_date_range" = "Custom Date Range";
+
+/* Home Page */
+"home" = "Home";
+"recent_transactions" = "Recent Transactions";
+"view_all" = "View All";
+"no_transactions" = "No transactions yet";
+"add_first_transaction" = "Tap the + button in the top right to add your first record";
+
+/* Transaction List */
+"transaction_records" = "Transaction Records";
+"search_transactions" = "Search transactions";
+
+/* Add Transaction */
+"add_transaction" = "Add Transaction";
+"amount" = "Amount";
+"enter_amount" = "Enter amount";
+"category" = "Category";
+"select_category" = "Select category";
+"note" = "Note";
+"enter_note" = "Enter note (optional)";
+"date" = "Date";
+"type" = "Type";
+
+/* Statistics Page */
+"statistics" = "Statistics";
+"category_analysis" = "Category Analysis";
+"trend_analysis" = "Trend Analysis";
+"category_distribution" = "Category Distribution";
+"no_data" = "No data";
+
+/* Category Management */
+"categories" = "Categories";
+"expense_categories" = "Expense Categories";
+"income_categories" = "Income Categories";
+"add_category" = "Add Category";
+"edit_category" = "Edit Category";
+"category_name" = "Category Name";
+"english_name" = "English Name";
+"icon" = "Icon";
+"color" = "Color";
+"delete_category" = "Delete Category";
+"delete_category_message" = "Deleting this category will move related transactions to 'Uncategorized'. Are you sure?";
+"uncategorized" = "Uncategorized";
+"category_in_use" = "This category has %d transaction records";
+
+/* Settings Page */
+"settings" = "Settings";
+"ai_translation" = "AI Translation";
+"data_management" = "Data Management";
+"app_settings" = "App Settings";
+"about" = "About";
+"language" = "Language";
+"language_settings" = "Language Settings";
+"chinese" = "中文";
+"english" = "English";
+"select_language" = "Select Language";
+
+/* OpenAI Settings */
+"openai_api_key" = "OpenAI API Key";
+"configured" = "Configured";
+"not_configured" = "Not configured";
+"set" = "Set";
+"set_openai_api_key" = "Set OpenAI API Key";
+"enter_api_key" = "Enter API key";
+"enter_openai_api_key_message" = "Please enter your OpenAI API key to enable translation features";
+"openai_translation_enabled" = "Advanced translation enabled";
+"basic_translation_available" = "Basic dictionary available";
+"set_api_for_better_translation" = "Set API key for better translation quality";
+
+/* Translation Error Messages */
+"translation_error_no_api_key" = "Please set OpenAI API key first";
+"translation_error_empty_text" = "Translation text cannot be empty";
+"translation_error_invalid_url" = "Invalid API URL";
+"translation_error_encoding" = "Data encoding error";
+"translation_error_invalid_response" = "Invalid server response";
+"translation_error_api" = "API error (code: %d)";
+"translation_error_parsing" = "Failed to parse response data";
+"translation_error_network" = "Network error: %@";
+"translation_error_system_unavailable" = "System translation service unavailable";
+
+/* Data Management */
+"export_data" = "Export Data";
+"export_description" = "Export your transaction data as CSV files for use in other applications.";
+"export_csv" = "Export as CSV";
+"no_data_to_export" = "No data to export";
+"total_transactions" = "%d transactions in total";
+"backup_restore" = "Backup & Restore";
+"notification_settings" = "Notification Settings";
+"appearance_settings" = "Appearance Settings";
+"reset_categories" = "Reset Categories";
+"reset_categories_message" = "This will remove all custom categories and restore default categories. Are you sure you want to continue?";
+
+/* Import Data */
+"import_data" = "Import Data";
+"import_description" = "Import transaction data from CSV files. The system will automatically remove duplicate records.";
+"import_csv" = "Import CSV File";
+"import_format_note" = "Please ensure CSV format: Date,Type,Category,Amount,Note";
+"import_result" = "Import Result";
+"import_error" = "Import Failed";
+"import_success_message" = "Import completed: %d successful, %d duplicates, %d errors";
+"file_read_error" = "File read error";
+"imported" = "Imported";
+"duplicated" = "Duplicated";
+"errors" = "Errors";
+
+/* About */
+"version" = "Version 1.0.0";
+"app_description" = "Cristine's Personal Accounting Book";
+
+/* Category Management */
+"no_categories_of_type" = "No %@ categories";
+"tap_button_to_add_category" = "Tap the button above to add categories";
+
+/* Default Categories */
+"dining" = "Dining";
+"transportation" = "Transportation";
+"shopping" = "Shopping";
+"entertainment" = "Entertainment";
+"medical" = "Medical";
+"education" = "Education";
+"rent" = "Rent";
+"other" = "Other";
+"salary" = "Salary";
+"bonus" = "Bonus";
+"investment" = "Investment";
+"part_time" = "Part-time";
+
+/* New Categories */
+"others" = "Others";
+"bank" = "Bank";
+"sm_shopping" = "Shopping";
+"grocery" = "Grocery";
+"transportation_bus" = "Transportation";
+"water_bill" = "Water Bill";
+"electricity_bill" = "Electricity Bill";
+"car_repair" = "Car Repair";
+"gas" = "Gas";
+"online_payment" = "Online Payment";
+
+/* Device Sync */
+"device_sync" = "Device Sync";
+"data_sync" = "Data Sync";
+"generate_qr_code" = "Generate QR Code";
+"scan_qr_code" = "Scan QR Code";
+"sync_description" = "Securely sync your accounting data between devices";
+"choose_sync_method" = "Choose sync method";
+"generate_mode_description" = "Let others scan";
+"scan_mode_description" = "Scan other device";
+"sync_status" = "Sync Status";
+"waiting_connection" = "Waiting for Connection";
+"scan_qr_instruction" = "Please scan this QR code on another device";
+"device_name" = "Device Name:";
+"app_version" = "App Version:";
+"last_sync" = "Last Sync:";
+"sync_tips_wifi" = "📱 Ensure both devices are on the same WiFi network or within Bluetooth range";
+"sync_tips_security" = "🔒 Data transmission uses end-to-end encryption, completely secure";
+"sync_tips_duplicate" = "⚡ Automatically detects duplicate data, no redundant records";
+"camera_permission_needed" = "Camera Permission Needed";
+"camera_permission_message" = "Please allow camera access in Settings to scan QR codes";
+"connecting" = "Connecting";
+"connected" = "Connected";
+"syncing" = "Syncing";
+"sync_completed" = "Sync Completed";
+"sync_failed" = "Sync Failed";
+"idle" = "Idle";
+"advertising" = "Waiting for Connection";
+"browsing" = "Searching Devices";
+"local_data_overview" = "Local Data Overview";
+"transaction_records" = "Transaction Records";
+"expense_categories" = "Expense Categories";
+"income_categories" = "Income Categories";
+"sync_connected_start" = "Connected, starting sync...";
+"sync_connection_lost" = "Connection lost";
+"sync_preparing" = "Preparing sync data...";
+"sync_sending_device_info" = "Sending device info...";
+"sync_waiting_data" = "Waiting for remote data...";
+"sync_received_device_info" = "Received device info";
+"sync_sending_local_data" = "Sending local data...";
+"sync_processing_data" = "Processing received data...";
+"sync_merging_data" = "Merging data completed...";
+"sync_error_occurred" = "Error occurred during sync";
+
+/* Common UI */
+"cancel" = "Cancel";
+"save" = "Save";
+"other" = "Other";
+"generating" = "Generating...";
+
+ 

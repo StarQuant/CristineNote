@@ -1,0 +1,217 @@
+/* 通用文本 */
+"income" = "收入";
+"expense" = "支出";
+"balance" = "净收入";
+"net_income" = "净收入";
+"total_income" = "收入";
+"total_expense" = "支出";
+"surplus" = "结余";
+"add" = "添加";
+"edit" = "编辑";
+"delete" = "删除";
+"cancel" = "取消";
+"save" = "保存";
+"confirm" = "确认";
+"done" = "完成";
+"ok" = "确定";
+"settings" = "设置";
+
+/* 时间周期 */
+"today" = "今天";
+"this_week" = "本周";
+"this_month" = "本月";
+"custom" = "自定义";
+"all_time" = "全部";
+"start_date" = "开始日期";
+"end_date" = "结束日期";
+"selected_range" = "选择的时间范围";
+"custom_date_range" = "自定义时间范围";
+
+/* 主页 */
+"home" = "首页";
+"recent_transactions" = "最近交易";
+"view_all" = "查看全部";
+"no_transactions" = "暂无交易记录";
+"add_first_transaction" = "点击右上角的 + 号添加第一笔记录";
+
+/* 交易列表 */
+"transaction_records" = "交易记录";
+"search_transactions" = "搜索交易记录";
+
+/* 添加交易 */
+"add_transaction" = "添加交易";
+"amount" = "金额";
+"enter_amount" = "输入金额";
+"category" = "分类";
+"select_category" = "选择分类";
+"note" = "备注";
+"enter_note" = "输入备注(可选)";
+"date" = "日期";
+"type" = "类型";
+
+/* 统计页面 */
+"statistics" = "统计";
+"category_analysis" = "分类分析";
+"trend_analysis" = "趋势分析";
+"category_distribution" = "分类分布";
+"no_data" = "暂无数据";
+
+/* 分类管理 */
+"categories" = "分类";
+"expense_categories" = "支出分类";
+"income_categories" = "收入分类";
+"add_category" = "添加分类";
+"edit_category" = "编辑分类";
+"category_name" = "分类名称";
+"english_name" = "英文名称";
+"icon" = "图标";
+"color" = "颜色";
+"delete_category" = "删除分类";
+"delete_category_message" = "删除分类将把相关交易转移到「未分类」分类，确定要删除吗？";
+"uncategorized" = "未分类";
+"category_in_use" = "该分类共有 %d 笔交易记录";
+
+/* 设置页面 */
+"settings" = "设置";
+"ai_translation" = "AI翻译";
+"data_management" = "数据管理";
+"app_settings" = "应用设置";
+"about" = "关于";
+"language" = "语言";
+"language_settings" = "语言设置";
+"chinese" = "中文";
+"english" = "English";
+"select_language" = "选择语言";
+
+/* OpenAI设置 */
+"openai_api_key" = "OpenAI API密钥";
+"configured" = "已配置";
+"not_configured" = "未配置";
+"set" = "设置";
+"set_openai_api_key" = "设置OpenAI API密钥";
+"enter_api_key" = "输入API密钥";
+"enter_openai_api_key_message" = "请输入您的OpenAI API密钥以启用翻译功能";
+"openai_translation_enabled" = "高级翻译已启用";
+"basic_translation_available" = "基础词典翻译可用";
+"set_api_for_better_translation" = "设置API密钥以获得AI翻译功能";
+
+/* 翻译错误消息 */
+"translation_error_no_api_key" = "请先设置OpenAI API密钥";
+"translation_error_empty_text" = "翻译文本不能为空";
+"translation_error_invalid_url" = "无效的API地址";
+"translation_error_encoding" = "数据编码错误";
+"translation_error_invalid_response" = "无效的服务器响应";
+"translation_error_api" = "API错误 (代码: %d)";
+"translation_error_parsing" = "解析响应数据失败";
+"translation_error_network" = "网络错误: %@";
+"translation_error_system_unavailable" = "系统翻译服务不可用";
+
+/* 数据管理 */
+"export_data" = "导出数据";
+"export_description" = "将您的交易数据导出为CSV文件，方便在其他应用中使用。";
+"export_csv" = "导出为CSV";
+"no_data_to_export" = "暂无数据可导出";
+"total_transactions" = "共 %d 条交易记录";
+"backup_restore" = "数据备份与恢复";
+"notification_settings" = "通知设置";
+"appearance_settings" = "外观设置";
+"reset_categories" = "重置分类";
+"reset_categories_message" = "这将删除所有自定义分类并恢复为默认分类，确定要继续吗？";
+
+/* 导入数据 */
+"import_data" = "导入数据";
+"import_description" = "从CSV文件导入交易数据，系统会自动去除重复记录。";
+"import_csv" = "导入CSV文件";
+"import_format_note" = "请确保CSV格式为：日期,类型,分类,金额,备注";
+"import_result" = "导入结果";
+"import_error" = "导入失败";
+"import_success_message" = "导入完成：成功%d条，重复%d条，错误%d条";
+"file_read_error" = "文件读取失败";
+"imported" = "已导入";
+"duplicated" = "重复";
+"errors" = "错误";
+
+/* 关于 */
+"version" = "版本 1.0.0";
+"app_description" = "Cristine专用记账本";
+
+/* 分类管理界面 */
+"no_categories_of_type" = "暂无%@分类";
+"tap_button_to_add_category" = "点击上方按钮添加分类";
+
+/* 默认分类 */
+"dining" = "餐饮";
+"transportation" = "交通";
+"shopping" = "购物";
+"entertainment" = "娱乐";
+"medical" = "医疗";
+"education" = "教育";
+"rent" = "房租";
+"other" = "其他";
+"salary" = "工资";
+"bonus" = "奖金";
+"investment" = "投资";
+"part_time" = "兼职";
+
+/* 新增分类 */
+"others" = "其他";
+"bank" = "银行";
+"sm_shopping" = "SM购物";
+"grocery" = "买菜";
+"transportation_bus" = "坐车";
+"water_bill" = "水费";
+"electricity_bill" = "电费";
+"car_repair" = "汽车修理";
+"gas" = "汽车加油";
+"online_payment" = "网络支付";
+
+/* 设备同步 */
+"device_sync" = "设备同步";
+"data_sync" = "数据同步";
+"generate_qr_code" = "生成二维码";
+"scan_qr_code" = "扫描二维码";
+"sync_description" = "在设备间安全同步您的记账数据";
+"choose_sync_method" = "选择同步方式";
+"generate_mode_description" = "让对方扫描";
+"scan_mode_description" = "扫描对方设备";
+"sync_status" = "同步状态";
+"waiting_connection" = "等待连接";
+"scan_qr_instruction" = "请在另一台设备上扫描此二维码";
+"device_name" = "设备名称:";
+"app_version" = "应用版本:";
+"last_sync" = "上次同步:";
+"sync_tips_wifi" = "📱 确保两台设备在同一WiFi网络或蓝牙范围内";
+"sync_tips_security" = "🔒 数据传输采用端到端加密，完全安全";
+"sync_tips_duplicate" = "⚡ 自动检测重复数据，不会产生冗余记录";
+"camera_permission_needed" = "需要相机权限";
+"camera_permission_message" = "请在设置中允许应用访问相机以扫描二维码";
+"connecting" = "连接中";
+"connected" = "已连接";
+"syncing" = "同步中";
+"sync_completed" = "同步完成";
+"sync_failed" = "同步失败";
+"idle" = "空闲";
+"advertising" = "等待连接";
+"browsing" = "搜索设备";
+"local_data_overview" = "本地数据概览";
+"transaction_records" = "交易记录";
+"expense_categories" = "支出分类";
+"income_categories" = "收入分类";
+"sync_connected_start" = "已连接，开始同步...";
+"sync_connection_lost" = "连接已断开";
+"sync_preparing" = "准备同步数据...";
+"sync_sending_device_info" = "发送设备信息...";
+"sync_waiting_data" = "等待对方数据...";
+"sync_received_device_info" = "收到设备信息";
+"sync_sending_local_data" = "发送本地数据...";
+"sync_processing_data" = "处理接收的数据...";
+"sync_merging_data" = "完成数据合并...";
+"sync_error_occurred" = "同步过程中发生错误";
+
+/* Common UI */
+"cancel" = "取消";
+"save" = "保存";
+"other" = "其他";
+"generating" = "生成中...";
+
+ 
