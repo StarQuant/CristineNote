@@ -72,7 +72,7 @@ class DataManager: ObservableObject {
         let basicCategories = [
             ("其他", "Others", "ellipsis.circle.fill", Color.gray),
             ("银行", "Bank", "building.columns.fill", Color.blue),
-            ("SM购物", "Shopping", "storefront.fill", Color.purple),
+            ("SM购物", "Shopping", "bag.fill", Color.purple),
             ("买菜", "Grocery", "cart", Color.green),
         ]
         

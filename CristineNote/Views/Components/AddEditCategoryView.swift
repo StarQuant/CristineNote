@@ -21,7 +21,7 @@ struct AddEditCategoryView: View {
         // 交通相关
         "car.fill", "bus.fill", "bicycle", "airplane", "fuelpump.fill",
         // 购物相关
-        "bag.fill", "cart.fill", "creditcard.fill", "giftcard.fill", "storefront.fill",
+        "bag.fill", "cart.fill", "creditcard.fill", "giftcard.fill", "storefront",
         // 房屋相关
         "house.fill", "bed.double.fill", "lightbulb.fill", "drop.fill", "bolt.fill",
         // 金融银行

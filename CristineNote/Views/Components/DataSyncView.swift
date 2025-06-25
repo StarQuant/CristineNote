@@ -26,22 +26,22 @@ struct DataSyncView: View {
                             .font(.system(size: 50))
                             .foregroundColor(.blue)
                         
-                                            Text(LocalizedString("sync_description"))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
+                        Text(LocalizedString("sync_description"))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
                     .padding(.top, 8)
                     
                     // 数据统计
                     DataStatsCard(dataManager: dataManager)
                     
-                                    // 同步模式选择
-                VStack(spacing: 16) {
-                    Text(LocalizedString("choose_sync_method"))
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        
+                    // 同步模式选择
+                    VStack(spacing: 16) {
+                        Text(LocalizedString("choose_sync_method"))
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            
                         HStack(spacing: 16) {
                             SyncModeCard(
                                 mode: .generate,
@@ -66,7 +66,7 @@ struct DataSyncView: View {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     .scaleEffect(0.8)
-                                Text(LocalizedString("generating"))
+                                Text(LocalizedString("waiting_connection"))
                             } else {
                                 Image(systemName: selectedMode == .generate ? "qrcode" : "qrcode.viewfinder")
                                 Text(selectedMode == .generate ? LocalizedString("generate_qr_code") : LocalizedString("scan_qr_code"))
@@ -90,16 +90,16 @@ struct DataSyncView: View {
                     }
                     .animation(.easeInOut(duration: 0.3), value: syncService.syncState)
                     
-                                    // 说明文字
-                VStack(spacing: 8) {
-                    Text(LocalizedString("sync_tips_wifi"))
-                    Text(LocalizedString("sync_tips_security"))
-                    Text(LocalizedString("sync_tips_duplicate"))
-                }
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 20)
+                    // 说明文字
+                    VStack(spacing: 8) {
+                        Text(LocalizedString("sync_tips_wifi"))
+                        Text(LocalizedString("sync_tips_security"))
+                        Text(LocalizedString("sync_tips_duplicate"))
+                    }
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 20)
                 }
             }
             .padding()
@@ -109,7 +109,7 @@ struct DataSyncView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(LocalizedString("done")) {
                         syncService.stopSync()
-                        isGeneratingQR = false
+                        resetGeneratingState()
                         dismiss()
                     }
                 }
@@ -134,8 +134,9 @@ struct DataSyncView: View {
         )) {
             NavigationView {
                 QRCodeGeneratorView(deviceInfo: deviceInfo) { qrGenerated in
-                    // 二维码生成完成后，隐藏等待状态
+                    // 二维码生成完成后，重置等待状态
                     DispatchQueue.main.async {
+                        print("QR Code generated: \(qrGenerated)")
                         isGeneratingQR = false
                     }
                 }
@@ -145,10 +146,14 @@ struct DataSyncView: View {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(LocalizedString("cancel")) {
                             syncService.stopSync()
-                            isGeneratingQR = false // 取消时也要重置状态
+                            resetGeneratingState()
                         }
                     }
                 }
+            }
+            .onDisappear {
+                // 当QR视图消失时，确保重置状态
+                resetGeneratingState()
             }
         }
         .alert(LocalizedString("camera_permission_needed"), isPresented: $showingPermissionAlert) {
@@ -162,12 +167,20 @@ struct DataSyncView: View {
             Text(LocalizedString("camera_permission_message"))
         }
         .onChange(of: syncService.syncState) { newState in
+            print("Sync state changed to: \(newState)")
             if case .connected = newState {
                 showingProgress = true
             }
             // 如果同步失败或完成，重置生成状态
-            if case .failed = newState, case .completed = newState {
-                isGeneratingQR = false
+            if case .failed = newState {
+                resetGeneratingState()
+            }
+            if case .completed = newState {
+                resetGeneratingState()
+            }
+            // 如果回到idle状态，也重置
+            if case .idle = newState {
+                resetGeneratingState()
             }
         }
         .onChange(of: syncService.isShowingProgress) { isShowing in
@@ -175,20 +188,28 @@ struct DataSyncView: View {
         }
         .onAppear {
             deviceInfo = DeviceInfo()
+            // 每次出现时重置状态
+            resetGeneratingState()
         }
     }
     
+    private func resetGeneratingState() {
+        print("Resetting generating state")
+        isGeneratingQR = false
+    }
+    
     private func startSync() {
+        print("Starting sync with mode: \(selectedMode)")
         switch selectedMode {
         case .generate:
-            // 显示生成状态
+            // 重置设备信息并显示生成状态
+            deviceInfo = DeviceInfo()
             isGeneratingQR = true
             
             // 立即开始生成过程
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                deviceInfo = DeviceInfo()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                print("Starting generate mode")
                 syncService.startGenerateMode()
-                // 注意：isGeneratingQR的重置现在在QRCodeGeneratorView生成完成后进行
             }
             
         case .scan:
