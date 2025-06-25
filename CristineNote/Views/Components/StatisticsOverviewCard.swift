@@ -5,26 +5,27 @@ struct StatisticsOverviewCard: View {
     let period: StatisticsPeriod
     let customStartDate: Date
     let customEndDate: Date
+    let selectedType: TransactionType?
 
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 20) {
                 StatisticItem(
                     title: LocalizedString("income"),
-                    value: formatCurrency(dataManager.getTotalIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate)),
+                    value: formatCurrency(getIncomeAmount()),
                     color: .green
                 )
 
                 StatisticItem(
                     title: LocalizedString("expense"),
-                    value: formatCurrency(dataManager.getTotalExpense(for: period, customStartDate: customStartDate, customEndDate: customEndDate)),
+                    value: formatCurrency(getExpenseAmount()),
                     color: .red
                 )
 
                 StatisticItem(
                     title: LocalizedString("surplus"),
-                    value: formatCurrency(dataManager.getBalance(for: period, customStartDate: customStartDate, customEndDate: customEndDate)),
-                    color: dataManager.getBalance(for: period, customStartDate: customStartDate, customEndDate: customEndDate) >= 0 ? .green : .red
+                    value: formatCurrency(getBalanceAmount()),
+                    color: getBalanceAmount() >= 0 ? .green : .red
                 )
             }
         }
@@ -34,6 +35,26 @@ struct StatisticsOverviewCard: View {
                 .fill(Color(.systemBackground))
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 2)
         )
+    }
+    
+    private func getIncomeAmount() -> Double {
+        if let type = selectedType {
+            return type == .income ? dataManager.getTotalIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate) : 0
+        } else {
+            return dataManager.getTotalIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+        }
+    }
+    
+    private func getExpenseAmount() -> Double {
+        if let type = selectedType {
+            return type == .expense ? dataManager.getTotalExpense(for: period, customStartDate: customStartDate, customEndDate: customEndDate) : 0
+        } else {
+            return dataManager.getTotalExpense(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+        }
+    }
+    
+    private func getBalanceAmount() -> Double {
+        return getIncomeAmount() - getExpenseAmount()
     }
 
     private func formatCurrency(_ amount: Double) -> String {

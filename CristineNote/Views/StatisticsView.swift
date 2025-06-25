@@ -52,11 +52,12 @@ struct StatisticsView: View {
                     customEndDate: $customEndDate
                 )
 
-                // 统计概览卡片
+                // 统计概览卡片 - 添加筛选类型参数
                 StatisticsOverviewCard(
                     period: selectedPeriod,
                     customStartDate: customStartDate,
-                    customEndDate: customEndDate
+                    customEndDate: customEndDate,
+                    selectedType: selectedType
                 )
                 .environmentObject(dataManager)
 

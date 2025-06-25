@@ -43,59 +43,57 @@ struct TransactionListView: View {
             TransactionSummaryCard(
                 period: selectedPeriod,
                 customStartDate: customStartDate,
-                customEndDate: customEndDate
+                customEndDate: customEndDate,
+                selectedType: selectedType
             )
             .environmentObject(dataManager)
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 16)
             
-            // 收入/支出类型筛选器 - 移到顶部
-            HStack(spacing: 12) {
-                Button(action: {
-                    selectedType = nil
-                }) {
-                    Text(LocalizedString("all"))
-                        .font(.system(.subheadline, weight: .medium))
-                        .foregroundColor(selectedType == nil ? .white : .primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(selectedType == nil ? Color.blue : Color(.systemGray6))
-                        )
-                }
-                
-                ForEach([TransactionType.expense, TransactionType.income], id: \.self) { type in
+            // 收入/支出类型筛选器 - 移到顶部，调整布局与周期选择器对齐
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
                     Button(action: {
-                        selectedType = type
+                        selectedType = nil
                     }) {
-                        Text(type.displayName)
+                        Text(LocalizedString("all"))
                             .font(.system(.subheadline, weight: .medium))
-                            .foregroundColor(selectedType == type ? .white : .primary)
+                            .foregroundColor(selectedType == nil ? .white : .primary)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 20)
-                                    .fill(selectedType == type ? type.color : Color(.systemGray6))
+                                    .fill(selectedType == nil ? Color.blue : Color(.systemGray6))
                             )
                     }
+                    
+                    ForEach([TransactionType.expense, TransactionType.income], id: \.self) { type in
+                        Button(action: {
+                            selectedType = type
+                        }) {
+                            Text(type.displayName)
+                                .font(.system(.subheadline, weight: .medium))
+                                .foregroundColor(selectedType == type ? .white : .primary)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(selectedType == type ? type.color : Color(.systemGray6))
+                                )
+                        }
+                    }
                 }
-                Spacer()
+                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
             .padding(.bottom, 12)
 
-            // 周期选择器 - 移到类型选择器下方，左对齐
-            HStack {
-                PeriodSelector(
-                    selectedPeriod: $selectedPeriod,
-                    customStartDate: $customStartDate,
-                    customEndDate: $customEndDate
-                )
-                Spacer()
-            }
-            .padding(.horizontal, 16)
+            // 周期选择器 - 调整为与类型选择器相同的滚动布局
+            PeriodSelector(
+                selectedPeriod: $selectedPeriod,
+                customStartDate: $customStartDate,
+                customEndDate: $customEndDate
+            )
             .padding(.bottom, 12)
 
             // 搜索栏

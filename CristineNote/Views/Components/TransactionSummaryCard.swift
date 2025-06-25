@@ -5,6 +5,7 @@ struct TransactionSummaryCard: View {
     let period: StatisticsPeriod
     let customStartDate: Date
     let customEndDate: Date
+    let selectedType: TransactionType?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -13,7 +14,7 @@ struct TransactionSummaryCard: View {
                 Text(LocalizedString("income"))
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text(formatCurrency(dataManager.getTotalIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate)))
+                Text(formatCurrency(getIncomeAmount()))
                     .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(.green)
                     .lineLimit(1)
@@ -31,7 +32,7 @@ struct TransactionSummaryCard: View {
                 Text(LocalizedString("expense"))
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text(formatCurrency(dataManager.getTotalExpense(for: period, customStartDate: customStartDate, customEndDate: customEndDate)))
+                Text(formatCurrency(getExpenseAmount()))
                     .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(.red)
                     .lineLimit(1)
@@ -49,7 +50,7 @@ struct TransactionSummaryCard: View {
                 Text(LocalizedString("surplus"))
                     .font(.caption)
                     .foregroundColor(.secondary)
-                let balance = dataManager.getBalance(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+                let balance = getBalanceAmount()
                 Text(formatCurrency(balance))
                     .font(.system(.subheadline, weight: .semibold))
                     .foregroundColor(balance >= 0 ? .green : .red)
@@ -64,6 +65,26 @@ struct TransactionSummaryCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.systemGray6).opacity(0.3))
         )
+    }
+    
+    private func getIncomeAmount() -> Double {
+        if let type = selectedType {
+            return type == .income ? dataManager.getTotalIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate) : 0
+        } else {
+            return dataManager.getTotalIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+        }
+    }
+    
+    private func getExpenseAmount() -> Double {
+        if let type = selectedType {
+            return type == .expense ? dataManager.getTotalExpense(for: period, customStartDate: customStartDate, customEndDate: customEndDate) : 0
+        } else {
+            return dataManager.getTotalExpense(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+        }
+    }
+    
+    private func getBalanceAmount() -> Double {
+        return getIncomeAmount() - getExpenseAmount()
     }
 
     private func formatCurrency(_ amount: Double) -> String {
