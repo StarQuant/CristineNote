@@ -36,5 +36,9 @@ struct MainTabView: View {
                 .environmentObject(dataManager)
         }
         .accentColor(.blue)
+        .onAppear {
+            // 智能检查并修复图标（只在需要时执行）
+            dataManager.checkAndFixIconsIfNeeded()
+        }
     }
 }

@@ -214,6 +214,13 @@
 "solutions" = "💡 解决建议:";
 "retry" = "重试";
 "reset" = "重置";
+
+/* 图标修复 */
+"fix_icons" = "修复图标问题";
+"fix_icons_description" = "修复无效的系统图标引用";
+"fix_icons_alert_title" = "修复图标问题";
+"fix_icons_alert_message" = "这将修复应用中所有无效的系统图标引用，解决图标显示错误的问题。";
+"fix" = "修复";
 "wait_and_retry" = "• 稍等片刻后重试";
 "close_other_apps" = "• 关闭其他网络发现应用";
 "restart_wifi" = "• 重启WiFi连接";

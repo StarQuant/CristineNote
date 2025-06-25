@@ -214,6 +214,13 @@
 "solutions" = "💡 Solutions:";
 "retry" = "Retry";
 "reset" = "Reset";
+
+/* Icon Fix */
+"fix_icons" = "Fix Icon Issues";
+"fix_icons_description" = "Fix invalid system icon references";
+"fix_icons_alert_title" = "Fix Icon Issues";
+"fix_icons_alert_message" = "This will fix all invalid system icon references in the app and resolve icon display errors.";
+"fix" = "Fix";
 "wait_and_retry" = "• Wait a moment and try again";
 "close_other_apps" = "• Close other network discovery apps";
 "restart_wifi" = "• Restart WiFi connection";
