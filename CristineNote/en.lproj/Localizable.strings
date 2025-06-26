@@ -166,6 +166,11 @@
 "gas" = "Gas";
 "online_payment" = "Online Payment";
 
+/* Transaction Detail */
+"transaction_detail" = "Transaction Detail";
+"delete_transaction" = "Delete Transaction";
+"delete_transaction_message" = "Are you sure you want to delete this transaction? This action cannot be undone.";
+
 /* Device Sync */
 "device_sync" = "Device Sync";
 "data_sync" = "Data Sync";

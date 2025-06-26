@@ -8,14 +8,33 @@ struct AddEditCategoryView: View {
     @EnvironmentObject var translationService: TranslationService
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name = ""
-    @State private var englishName = ""
-    @State private var iconName = "circle.fill"
-    @State private var selectedColor = Color.blue
+    @State private var name: String
+    @State private var englishName: String
+    @State private var iconName: String
+    @State private var selectedColor: Color
     @State private var nameDebounceTimer: Timer?
     @State private var englishNameDebounceTimer: Timer?
+    @State private var validIcons: [String] = []
+    
+    init(type: TransactionType, category: TransactionCategory?) {
+        self.type = type
+        self.category = category
+        
+        // 直接在init中初始化State变量
+        if let category = category {
+            self._name = State(initialValue: category.name)
+            self._englishName = State(initialValue: category.englishName ?? "")
+            self._iconName = State(initialValue: category.iconName)
+            self._selectedColor = State(initialValue: category.color)
+        } else {
+            self._name = State(initialValue: "")
+            self._englishName = State(initialValue: "")
+            self._iconName = State(initialValue: "circle.fill")
+            self._selectedColor = State(initialValue: Color.blue)
+        }
+    }
 
-    private let availableIcons = [
+    private let allAvailableIcons = [
         // 餐饮相关
         "fork.knife", "cup.and.saucer", "birthday.cake", "wineglass", "cart",
         // 交通相关
@@ -27,9 +46,9 @@ struct AddEditCategoryView: View {
         // 金融银行
         "building.columns.fill", "banknote.fill", "dollarsign.circle.fill", "percent",
         // 汽车相关
-        "wrench.and.screwdriver.fill", "fuelpump.fill", "car.fill", "bus.fill",
+        "wrench.and.screwdriver.fill",
         // 网络支付
-        "wifi", "creditcard.fill", "iphone", "globe",
+        "wifi", "iphone", "globe",
         // 娱乐相关
         "gamecontroller.fill", "tv.fill", "music.note", "film.fill",
         // 健康相关
@@ -69,31 +88,37 @@ struct AddEditCategoryView: View {
                 }
 
                 Section(LocalizedString("icon")) {
-                    LazyVGrid(
-                        columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6),
-                        spacing: 12
-                    ) {
-                        ForEach(availableIcons, id: \.self) { icon in
-                            Button(action: {
-                                iconName = icon
-                            }) {
-                                Image(systemName: icon)
-                                    .font(.system(size: 20))
-                                    .foregroundColor(iconName == icon ? .white : .primary)
-                                    .frame(width: 48, height: 48)
-                                    .background(
-                                        Circle()
-                                            .fill(iconName == icon ? selectedColor : Color(.systemGray5))
-                                    )
-                                    .overlay(
-                                        Circle()
-                                            .stroke(iconName == icon ? selectedColor.opacity(0.3) : Color.clear, lineWidth: 1)
-                                    )
+                    if validIcons.isEmpty {
+                        Text("正在加载图标...")
+                            .foregroundColor(.secondary)
+                            .padding()
+                    } else {
+                        LazyVGrid(
+                            columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6),
+                            spacing: 12
+                        ) {
+                            ForEach(validIcons, id: \.self) { icon in
+                                Button(action: {
+                                    iconName = icon
+                                }) {
+                                    Image(systemName: icon)
+                                        .font(.system(size: 20))
+                                        .foregroundColor(iconName == icon ? .white : .primary)
+                                        .frame(width: 48, height: 48)
+                                        .background(
+                                            Circle()
+                                                .fill(iconName == icon ? selectedColor : Color(.systemGray5))
+                                        )
+                                        .overlay(
+                                            Circle()
+                                                .stroke(iconName == icon ? selectedColor.opacity(0.3) : Color.clear, lineWidth: 1)
+                                        )
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
+                        .padding(.vertical, 12)
                     }
-                    .padding(.vertical, 12)
                 }
 
                 Section(LocalizedString("color")) {
@@ -137,12 +162,33 @@ struct AddEditCategoryView: View {
             }
         }
         .onAppear {
-            if let category = category {
-                name = category.name
-                englishName = category.englishName ?? ""
-                iconName = category.iconName
-                selectedColor = category.color
+            validateIcons()
+        }
+    }
+    
+    // 检查图标是否在当前iOS版本中可用
+    private func validateIcons() {
+        var validIconsList: [String] = []
+        var seenIcons = Set<String>()
+        
+        for iconName in allAvailableIcons {
+            // 检查是否重复
+            if seenIcons.contains(iconName) {
+                continue // 跳过重复的图标
             }
+            seenIcons.insert(iconName)
+            
+            // 使用简单的UIImage检测，只要能创建就认为可用
+            if let _ = UIImage(systemName: iconName) {
+                validIconsList.append(iconName)
+            }
+        }
+        
+        validIcons = validIconsList
+        
+        // 确保至少有基本图标
+        if validIcons.isEmpty {
+            validIcons = ["circle.fill", "star.fill", "heart.fill", "house.fill", "car.fill"]
         }
     }
 

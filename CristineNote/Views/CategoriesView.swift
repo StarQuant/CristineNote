@@ -4,7 +4,6 @@ struct CategoriesView: View {
     @EnvironmentObject var dataManager: DataManager
     @State private var selectedType: TransactionType = .expense
     @State private var showingAddCategory = false
-    @State private var showingEditCategory = false
     @State private var editingCategory: TransactionCategory?
     @State private var showingDeleteAlert = false
     @State private var categoryToDelete: TransactionCategory?
@@ -19,6 +18,8 @@ struct CategoriesView: View {
             HStack {
                 Spacer()
                 Button(action: {
+                    // 确保编辑分类的sheet已关闭
+                    editingCategory = nil
                     showingAddCategory = true
                 }) {
                     HStack(spacing: 8) {
@@ -76,8 +77,8 @@ struct CategoriesView: View {
                 .environmentObject(dataManager)
                 .environmentObject(TranslationService())
         }
-        .sheet(isPresented: $showingEditCategory) {
-            AddEditCategoryView(type: selectedType, category: editingCategory)
+        .sheet(item: $editingCategory) { category in
+            AddEditCategoryView(type: selectedType, category: category)
                 .environmentObject(dataManager)
                 .environmentObject(TranslationService())
         }
@@ -101,8 +102,10 @@ struct CategoriesView: View {
     }
 
     private func editCategory(_ category: TransactionCategory) {
+        // 确保添加分类的sheet已关闭
+        showingAddCategory = false
+        // 设置编辑分类
         editingCategory = category
-        showingEditCategory = true
     }
 
     private func deleteCategory(_ category: TransactionCategory) {

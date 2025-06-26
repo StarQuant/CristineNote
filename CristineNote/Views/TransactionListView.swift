@@ -7,6 +7,9 @@ struct TransactionListView: View {
     @State private var customStartDate = Calendar.current.startOfDay(for: Date())
     @State private var customEndDate = Date()
     @State private var selectedType: TransactionType? = nil
+    @State private var showingDeleteAlert = false
+    @State private var transactionToDelete: Transaction?
+    @State private var selectedTransaction: Transaction?
 
     private var filteredTransactions: [Transaction] {
         let transactions = dataManager.getTransactions(for: selectedPeriod, customStartDate: customStartDate, customEndDate: customEndDate)
@@ -110,16 +113,21 @@ struct TransactionListView: View {
                         Section(header: DateHeaderView(date: date)) {
                             ForEach(transactions) { transaction in
                                 TransactionRowView(transaction: transaction)
-                                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                                    .listRowBackground(Color.clear)
+                                    .onTapGesture {
+                                        selectedTransaction = transaction
+                                    }
                             }
                             .onDelete { indexSet in
-                                deleteTransactions(at: indexSet, from: transactions)
+                                for index in indexSet {
+                                    let transaction = transactions[index]
+                                    transactionToDelete = transaction
+                                    showingDeleteAlert = true
+                                }
                             }
                         }
                     }
                 }
-                .listStyle(PlainListStyle())
+                .listStyle(.plain)
                 .refreshable {
                     // 刷新数据
                     dataManager.loadData()
@@ -128,19 +136,31 @@ struct TransactionListView: View {
         }
         .navigationTitle(LocalizedString("transaction_records"))
         .navigationBarTitleDisplayMode(.inline)
-        .onTapGesture {
-            // 点击空白处收回键盘
-            hideKeyboard()
+        .sheet(item: $selectedTransaction) { transaction in
+            TransactionDetailView(transaction: transaction)
+                .environmentObject(dataManager)
+        }
+        .alert(LocalizedString("delete_transaction"), isPresented: $showingDeleteAlert) {
+            Button(LocalizedString("cancel"), role: .cancel) { 
+                print("取消删除")
+                transactionToDelete = nil
+            }
+            Button(LocalizedString("delete"), role: .destructive) {
+                print("确认删除")
+                if let transaction = transactionToDelete {
+                    print("删除交易: \(transaction.id)")
+                    dataManager.deleteTransaction(transaction)
+                    print("删除完成")
+                } else {
+                    print("错误：transactionToDelete为nil")
+                }
+                transactionToDelete = nil
+            }
+        } message: {
+            Text(LocalizedString("delete_transaction_message"))
         }
     }
 
-    private func deleteTransactions(at offsets: IndexSet, from transactions: [Transaction]) {
-        for index in offsets {
-            dataManager.deleteTransaction(transactions[index])
-        }
-    }
-    
-    private func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
+
+
 }

@@ -13,8 +13,7 @@ class DataManager: ObservableObject {
     private let incomeCategoriesKey = "IncomeCategories"
     private let languageKey = "AppLanguage"
     
-    private let iconMigrationVersionKey = "IconMigrationVersion"
-    private let currentIconMigrationVersion = 1
+
     
     init() {
         validateDataIntegrity()
@@ -44,7 +43,7 @@ class DataManager: ObservableObject {
     private func loadTransactions() {
         if let data = UserDefaults.standard.data(forKey: transactionsKey),
            let savedTransactions = try? JSONDecoder().decode([Transaction].self, from: data) {
-            transactions = migrateTransactionIcons(in: savedTransactions)
+            transactions = savedTransactions
         }
     }
     
@@ -52,7 +51,7 @@ class DataManager: ObservableObject {
         // 加载支出分类
         if let data = UserDefaults.standard.data(forKey: expenseCategoriesKey),
            let savedCategories = try? JSONDecoder().decode([TransactionCategory].self, from: data) {
-            expenseCategories = migrateIconNames(in: savedCategories)
+            expenseCategories = savedCategories
         } else {
             expenseCategories = createDefaultExpenseCategories()
             saveCategories()
@@ -61,7 +60,7 @@ class DataManager: ObservableObject {
         // 加载收入分类
         if let data = UserDefaults.standard.data(forKey: incomeCategoriesKey),
            let savedCategories = try? JSONDecoder().decode([TransactionCategory].self, from: data) {
-            incomeCategories = migrateIconNames(in: savedCategories)
+            incomeCategories = savedCategories
         } else {
             incomeCategories = createDefaultIncomeCategories()
             saveCategories()
@@ -376,186 +375,11 @@ class DataManager: ObservableObject {
         UserDefaults.standard.synchronize()
     }
     
-    // MARK: - 数据迁移
-    private func migrateIconNames(in categories: [TransactionCategory]) -> [TransactionCategory] {
-        var migratedCategories = categories
-        var needsSave = false
-        
-        for index in migratedCategories.indices {
-            let oldIconName = migratedCategories[index].iconName
-            var newIconName = oldIconName
-            
-            // 修复已知的无效图标名称
-            switch oldIconName {
-            case "storefront.fill":
-                newIconName = "bag.fill"
-                needsSave = true
-                print("📝 迁移图标: \(oldIconName) -> \(newIconName)")
-            default:
-                break
-            }
-            
-            // 如果图标名称改变了，更新分类
-            if newIconName != oldIconName {
-                migratedCategories[index] = TransactionCategory(
-                    id: migratedCategories[index].id,
-                    name: migratedCategories[index].name,
-                    englishName: migratedCategories[index].englishName,
-                    iconName: newIconName,
-                    color: migratedCategories[index].color,
-                    type: migratedCategories[index].type
-                )
-            }
-        }
-        
-        // 如果有迁移，保存更新后的数据
-        if needsSave {
-            print("💾 保存迁移后的分类数据")
-            DispatchQueue.main.async {
-                self.saveCategories()
-            }
-        }
-        
-        return migratedCategories
-    }
-    
-    private func migrateTransactionIcons(in transactions: [Transaction]) -> [Transaction] {
-        var migratedTransactions = transactions
-        var needsSave = false
-        
-        for index in migratedTransactions.indices {
-            let oldIconName = migratedTransactions[index].category.iconName
-            var newIconName = oldIconName
-            
-            // 修复已知的无效图标名称
-            switch oldIconName {
-            case "storefront.fill":
-                newIconName = "bag.fill"
-                needsSave = true
-                print("📝 迁移图标: \(oldIconName) -> \(newIconName)")
-            default:
-                break
-            }
-            
-            // 如果图标名称改变了，更新交易
-            if newIconName != oldIconName {
-                migratedTransactions[index].category = TransactionCategory(
-                    id: migratedTransactions[index].category.id,
-                    name: migratedTransactions[index].category.name,
-                    englishName: migratedTransactions[index].category.englishName,
-                    iconName: newIconName,
-                    color: migratedTransactions[index].category.color,
-                    type: migratedTransactions[index].category.type
-                )
-            }
-        }
-        
-        // 如果有迁移，保存更新后的数据
-        if needsSave {
-            print("💾 保存迁移后的交易数据")
-            DispatchQueue.main.async {
-                self.saveTransactions()
-            }
-        }
-        
-        return migratedTransactions
-    }
+
     
     // MARK: - 数据清理和重置
     
-    /// 智能检查并修复无效图标（只在需要时执行）
-    func checkAndFixIconsIfNeeded() {
-        let savedVersion = UserDefaults.standard.integer(forKey: iconMigrationVersionKey)
-        
-        // 如果已经修复过，跳过检查
-        if savedVersion >= currentIconMigrationVersion {
-            print("✅ 图标已是最新版本，跳过检查")
-            return
-        }
-        
-        print("🔧 检测到需要图标迁移，开始异步修复...")
-        
-        // 异步执行修复，不阻塞主线程
-        DispatchQueue.global(qos: .background).async {
-            self.performIconMigration()
-            
-            // 标记为已修复
-            DispatchQueue.main.async {
-                UserDefaults.standard.set(self.currentIconMigrationVersion, forKey: self.iconMigrationVersionKey)
-                print("✅ 图标修复完成并标记版本")
-            }
-        }
-    }
-    
-    /// 执行图标迁移（后台线程）
-    private func performIconMigration() {
-        var categoriesNeedUpdate = false
-        var transactionsNeedUpdate = false
-        
-        // 检查分类数据
-        let originalExpenseCategories = expenseCategories
-        let originalIncomeCategories = incomeCategories
-        
-        let migratedExpenseCategories = migrateIconNames(in: originalExpenseCategories)
-        let migratedIncomeCategories = migrateIconNames(in: originalIncomeCategories)
-        
-        if !areArraysEqual(originalExpenseCategories, migratedExpenseCategories) ||
-           !areArraysEqual(originalIncomeCategories, migratedIncomeCategories) {
-            categoriesNeedUpdate = true
-        }
-        
-        // 检查交易数据
-        let originalTransactions = transactions
-        let migratedTransactions = migrateTransactionIcons(in: originalTransactions)
-        
-        if !areTransactionArraysEqual(originalTransactions, migratedTransactions) {
-            transactionsNeedUpdate = true
-        }
-        
-        // 在主线程更新数据
-        DispatchQueue.main.async {
-            if categoriesNeedUpdate {
-                self.expenseCategories = migratedExpenseCategories
-                self.incomeCategories = migratedIncomeCategories
-                self.saveCategories()
-                print("💾 分类数据已更新")
-            }
-            
-            if transactionsNeedUpdate {
-                self.transactions = migratedTransactions
-                self.saveTransactions()
-                print("💾 交易数据已更新")
-            }
-            
-            if !categoriesNeedUpdate && !transactionsNeedUpdate {
-                print("✅ 数据检查完成，无需修复")
-            }
-        }
-    }
-    
-    /// 比较分类数组是否相等（仅比较图标名称）
-    private func areArraysEqual(_ array1: [TransactionCategory], _ array2: [TransactionCategory]) -> Bool {
-        guard array1.count == array2.count else { return false }
-        
-        for i in 0..<array1.count {
-            if array1[i].iconName != array2[i].iconName {
-                return false
-            }
-        }
-        return true
-    }
-    
-    /// 比较交易数组是否相等（仅比较分类图标）
-    private func areTransactionArraysEqual(_ array1: [Transaction], _ array2: [Transaction]) -> Bool {
-        guard array1.count == array2.count else { return false }
-        
-        for i in 0..<array1.count {
-            if array1[i].category.iconName != array2[i].category.iconName {
-                return false
-            }
-        }
-        return true
-    }
+
     
     /// 重置所有分类数据到默认状态
     func resetCategoriesToDefault() {
@@ -575,16 +399,7 @@ class DataManager: ObservableObject {
         print("✅ 分类数据重置完成")
     }
     
-    /// 手动修复所有已保存数据中的无效图标（用于设置页面）
-    func fixInvalidIcons() {
-        print("🔧 手动开始修复无效图标...")
-        
-        // 重置迁移版本，强制执行修复
-        UserDefaults.standard.set(0, forKey: iconMigrationVersionKey)
-        
-        // 执行修复
-        checkAndFixIconsIfNeeded()
-    }
+
 }
 
 // MARK: - 统计周期

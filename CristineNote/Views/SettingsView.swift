@@ -10,7 +10,7 @@ struct SettingsView: View {
     @State private var showingLanguageSelection = false
     @State private var showingImportSheet = false
     @State private var showingDataSync = false
-    @State private var showingIconFixAlert = false
+
 
     var body: some View {
         List {
@@ -96,25 +96,6 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 4)
                 }
-                
-                Button(action: {
-                    showingIconFixAlert = true
-                }) {
-                    HStack {
-                        Image(systemName: "wrench.and.screwdriver")
-                            .foregroundColor(.orange)
-                            .frame(width: 24)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(LocalizedString("fix_icons"))
-                            
-                            Text(LocalizedString("fix_icons_description"))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
             }
 
             // 应用设置
@@ -180,15 +161,7 @@ struct SettingsView: View {
         } message: {
             Text(LocalizedString("enter_openai_api_key_message"))
         }
-        .alert(LocalizedString("fix_icons_alert_title"), isPresented: $showingIconFixAlert) {
-            Button(LocalizedString("cancel"), role: .cancel) { }
-            
-            Button(LocalizedString("fix")) {
-                dataManager.fixInvalidIcons()
-            }
-        } message: {
-            Text(LocalizedString("fix_icons_alert_message"))
-        }
+
         .sheet(isPresented: $showingExportSheet) {
             ExportDataView()
                 .environmentObject(dataManager)

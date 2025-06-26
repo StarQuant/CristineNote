@@ -17,7 +17,7 @@ struct TypeSelector: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(
-                        selectedType == type ? type.color : Color.clear
+                        selectedType == type ? type.color : Color(.systemGray5)
                     )
                     .foregroundColor(
                         selectedType == type ? .white : .primary
