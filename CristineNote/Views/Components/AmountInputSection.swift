@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AmountInputSection: View {
     @Binding var amount: String
+    @EnvironmentObject var dataManager: DataManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -9,9 +10,11 @@ struct AmountInputSection: View {
                 .font(.system(.headline, weight: .semibold))
 
             HStack {
-                Text("¥")
-                    .font(.system(.title, weight: .medium))
-                    .foregroundColor(.secondary)
+                // 显示当前系统货币符号，不可选择
+                Text(dataManager.currentSystemCurrency.symbol)
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 8)
 
                 TextField(LocalizedString("enter_amount"), text: $amount)
                     .font(.system(size: 28, weight: .medium, design: .rounded))

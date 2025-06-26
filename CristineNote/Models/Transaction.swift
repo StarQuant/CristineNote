@@ -110,36 +110,93 @@ struct TransactionCategory: Identifiable, Codable, Hashable {
 // MARK: - 交易记录
 struct Transaction: Identifiable, Codable {
     let id: UUID
-    let amount: Double
+    let originalAmount: Double      // 原始录入金额
+    let originalCurrency: Currency  // 原始录入币种
     let type: TransactionType
     var category: TransactionCategory
     let note: String
     let date: Date
     var originalNote: String? // 用于存储翻译前的原文
 
-    init(amount: Double, type: TransactionType, category: TransactionCategory, note: String = "", date: Date = Date()) {
+    init(amount: Double, currency: Currency = Currency.defaultCurrency, type: TransactionType, category: TransactionCategory, note: String = "", date: Date = Date()) {
         self.id = UUID()
-        self.amount = amount
+        self.originalAmount = amount
+        self.originalCurrency = currency
         self.type = type
         self.category = category
         self.note = note
         self.date = date
         self.originalNote = nil
     }
+    
+    // 为了向后兼容旧数据
+    enum CodingKeys: String, CodingKey {
+        case id, originalAmount, originalCurrency, type, category, note, date, originalNote
+        case amount // 兼容旧字段
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        type = try container.decode(TransactionType.self, forKey: .type)
+        category = try container.decode(TransactionCategory.self, forKey: .category)
+        note = try container.decode(String.self, forKey: .note)
+        date = try container.decode(Date.self, forKey: .date)
+        originalNote = try? container.decode(String.self, forKey: .originalNote)
+        
+        // 处理新旧字段兼容
+        if let newAmount = try? container.decode(Double.self, forKey: .originalAmount) {
+            originalAmount = newAmount
+            originalCurrency = try container.decodeIfPresent(Currency.self, forKey: .originalCurrency) ?? .cny
+        } else {
+            // 兼容旧数据
+            originalAmount = try container.decode(Double.self, forKey: .amount)
+            originalCurrency = .cny // 旧数据默认为人民币
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(originalAmount, forKey: .originalAmount)
+        try container.encode(originalCurrency, forKey: .originalCurrency)
+        try container.encode(type, forKey: .type)
+        try container.encode(category, forKey: .category)
+        try container.encode(note, forKey: .note)
+        try container.encode(date, forKey: .date)
+        try container.encodeIfPresent(originalNote, forKey: .originalNote)
+    }
 
-    var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "CNY"
-        formatter.currencySymbol = "¥"
-        formatter.maximumFractionDigits = amount.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "¥0"
+    // 格式化显示金额（在指定货币下）
+    @MainActor func formattedAmount(in targetCurrency: Currency, exchangeRateService: ExchangeRateService) -> String {
+        let convertedAmount = exchangeRateService.convert(
+            amount: originalAmount,
+            from: originalCurrency,
+            to: targetCurrency
+        )
+        return formatCurrency(convertedAmount, currency: targetCurrency)
+    }
+    
+    // 显示原始金额信息
+    var originalAmountText: String {
+        return formatCurrency(originalAmount, currency: originalCurrency)
     }
 
     var displayAmount: String {
         let prefix = type == .income ? "+" : "-"
-        return prefix + formattedAmount
+        return prefix + originalAmountText
     }
+}
+
+// MARK: - 货币格式化工具函数
+func formatCurrency(_ amount: Double, currency: Currency) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .currency
+    formatter.currencyCode = currency.apiCode
+    formatter.currencySymbol = currency.symbol
+    formatter.maximumFractionDigits = amount.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2
+    return formatter.string(from: NSNumber(value: amount)) ?? "\(currency.symbol)0"
 }
 
 // MARK: - Color Codable Support

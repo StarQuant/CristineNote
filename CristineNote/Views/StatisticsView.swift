@@ -52,8 +52,39 @@ struct StatisticsView: View {
                     customEndDate: $customEndDate
                 )
 
-                // 统计概览卡片 - 添加筛选类型参数
-                StatisticsOverviewCard(
+                // 统计概览卡片 - 使用与首页一致的布局
+                StatisticsCompactOverviewCard(
+                    period: selectedPeriod,
+                    customStartDate: customStartDate,
+                    customEndDate: customEndDate,
+                    selectedType: selectedType
+                )
+                .environmentObject(dataManager)
+
+                // 月度趋势图
+                MonthlyTrendChartView(selectedType: selectedType)
+                    .environmentObject(dataManager)
+
+                // 日消费模式图
+                DailyConsumptionPatternView(
+                    period: selectedPeriod,
+                    customStartDate: customStartDate,
+                    customEndDate: customEndDate,
+                    selectedType: selectedType
+                )
+                .environmentObject(dataManager)
+
+                // 支出排行统计
+                ExpenseRankingView(
+                    period: selectedPeriod,
+                    customStartDate: customStartDate,
+                    customEndDate: customEndDate,
+                    selectedType: selectedType
+                )
+                .environmentObject(dataManager)
+
+                // 与上月对比统计
+                MonthComparisonView(
                     period: selectedPeriod,
                     customStartDate: customStartDate,
                     customEndDate: customEndDate,
@@ -71,7 +102,7 @@ struct StatisticsView: View {
                     period: selectedPeriod,
                     customStartDate: customStartDate,
                     customEndDate: customEndDate,
-                    transactionType: selectedType ?? .expense
+                    selectedType: selectedType
                 )
                 .environmentObject(dataManager)
             }

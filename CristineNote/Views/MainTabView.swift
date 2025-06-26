@@ -36,5 +36,12 @@ struct MainTabView: View {
                 .environmentObject(dataManager)
         }
         .accentColor(.blue)
+        .onAppear {
+            // 确保TabBar背景正常显示，与其他页面保持一致
+            let tabBarAppearance = UITabBarAppearance()
+            tabBarAppearance.configureWithDefaultBackground()
+            UITabBar.appearance().standardAppearance = tabBarAppearance
+            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        }
     }
 }

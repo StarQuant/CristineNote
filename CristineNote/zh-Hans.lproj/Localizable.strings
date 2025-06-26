@@ -171,6 +171,34 @@
 "delete_transaction" = "删除交易";
 "delete_transaction_message" = "确定要删除这笔交易记录吗？此操作无法撤销。";
 
+/* 多币种 */
+"currency" = "货币";
+"system_currency" = "系统货币";
+"currency_settings" = "货币设置";
+"exchange_rates" = "汇率管理";
+"exchange_rate" = "汇率";
+"manual_rate" = "手动设置汇率";
+"update_from_api" = "从API更新汇率";
+"last_updated" = "最后更新";
+"never_updated" = "从未更新";
+"updating_rates" = "更新汇率中...";
+"rate_updated_successfully" = "汇率更新成功";
+"rate_update_failed" = "汇率更新失败";
+"set_manual_rate" = "设置手动汇率";
+"from_currency" = "源货币";
+"to_currency" = "目标货币";
+"rate_value" = "汇率值";
+"enter_rate" = "输入汇率";
+"rate_example" = "例如：1美元 = 7.2人民币，则输入 7.2";
+"update_success" = "更新成功";
+"update_failed" = "更新失败";
+"ok" = "确定";
+
+/* 货币名称 */
+"currency_php" = "菲律宾比索";
+"currency_cny" = "人民币";
+"currency_usd" = "美元";
+
 /* 设备同步 */
 "device_sync" = "设备同步";
 "data_sync" = "数据同步";
@@ -236,10 +264,36 @@
 "restart_wifi_bluetooth" = "• 尝试重启WiFi或蓝牙";
 "check_network_connection" = "• 检查网络连接";
 
+/* 图表相关 */
+"monthly_trend" = "月度趋势";
+"weekly_pattern" = "周消费模式";
+"daily_pattern" = "日消费明细";
+"no_trend_data" = "暂无趋势数据";
+"no_pattern_data" = "暂无模式数据";
+"average" = "平均";
+"highest" = "最高";
+"lowest" = "最低";
+
 /* Common UI */
 "cancel" = "取消";
 "save" = "保存";
 "other" = "其他";
 "generating" = "生成中...";
+
+/* 排行统计 */
+"expense_ranking" = "支出排行";
+"income_ranking" = "收入排行";
+"no_ranking_data" = "暂无排行数据";
+"more_categories" = "更多分类";
+
+/* 月度对比 */
+"month_comparison" = "月度对比";
+"no_comparison_data" = "暂无对比数据";
+
+/* 设备同步 - 多币种相关 */
+"sync_exchange_rates" = "同步汇率";
+"sync_currency_settings" = "货币设置";
+"exchange_rates_synced" = "汇率已同步";
+"currency_settings_synced" = "货币设置已同步";
 
  

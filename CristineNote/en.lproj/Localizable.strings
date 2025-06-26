@@ -171,6 +171,34 @@
 "delete_transaction" = "Delete Transaction";
 "delete_transaction_message" = "Are you sure you want to delete this transaction? This action cannot be undone.";
 
+/* Multi-Currency */
+"currency" = "Currency";
+"system_currency" = "System Currency";
+"currency_settings" = "Currency Settings";
+"exchange_rates" = "Exchange Rate Management";
+"exchange_rate" = "Exchange Rate";
+"manual_rate" = "Set Manual Rate";
+"update_from_api" = "Update from API";
+"last_updated" = "Last Updated";
+"never_updated" = "Never Updated";
+"updating_rates" = "Updating Rates...";
+"rate_updated_successfully" = "Rates Updated Successfully";
+"rate_update_failed" = "Rate Update Failed";
+"set_manual_rate" = "Set Manual Rate";
+"from_currency" = "From Currency";
+"to_currency" = "To Currency";
+"rate_value" = "Rate Value";
+"enter_rate" = "Enter Rate";
+"rate_example" = "Example: 1 USD = 7.2 CNY, enter 7.2";
+"update_success" = "Update Successful";
+"update_failed" = "Update Failed";
+"ok" = "OK";
+
+/* Currency Names */
+"currency_php" = "Philippine Peso";
+"currency_cny" = "Chinese Yuan";
+"currency_usd" = "US Dollar";
+
 /* Device Sync */
 "device_sync" = "Device Sync";
 "data_sync" = "Data Sync";
@@ -236,10 +264,36 @@
 "restart_wifi_bluetooth" = "• Try restarting WiFi or Bluetooth";
 "check_network_connection" = "• Check network connection";
 
+/* Charts */
+"monthly_trend" = "Monthly Trend";
+"weekly_pattern" = "Weekly Pattern";
+"daily_pattern" = "Daily Details";
+"no_trend_data" = "No trend data available";
+"no_pattern_data" = "No pattern data available";
+"average" = "Average";
+"highest" = "Highest";
+"lowest" = "Lowest";
+
 /* Common UI */
 "cancel" = "Cancel";
 "save" = "Save";
 "other" = "Other";
 "generating" = "Generating...";
+
+/* Ranking Statistics */
+"expense_ranking" = "Expense Ranking";
+"income_ranking" = "Income Ranking";
+"no_ranking_data" = "No ranking data available";
+"more_categories" = "More categories";
+
+/* Month Comparison */
+"month_comparison" = "Month Comparison";
+"no_comparison_data" = "No comparison data available";
+
+/* Device Sync - Multi-Currency */
+"sync_exchange_rates" = "Sync Exchange Rates";
+"sync_currency_settings" = "Currency Settings";
+"exchange_rates_synced" = "Exchange Rates Synced";
+"currency_settings_synced" = "Currency Settings Synced";
 
  

@@ -42,19 +42,7 @@ struct TransactionListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 顶部统计卡片
-            TransactionSummaryCard(
-                period: selectedPeriod,
-                customStartDate: customStartDate,
-                customEndDate: customEndDate,
-                selectedType: selectedType
-            )
-            .environmentObject(dataManager)
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
-            
-            // 收入/支出类型筛选器 - 移到顶部，调整布局与周期选择器对齐
+            // 收入/支出类型筛选器
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     Button(action: {
@@ -89,6 +77,7 @@ struct TransactionListView: View {
                 }
                 .padding(.horizontal, 16)
             }
+            .padding(.top, 8)
             .padding(.bottom, 12)
 
             // 周期选择器 - 调整为与类型选择器相同的滚动布局
@@ -103,6 +92,17 @@ struct TransactionListView: View {
             SearchBar(text: $searchText)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
+
+            // 统计概览
+            CompactOverviewCard(
+                period: selectedPeriod,
+                customStartDate: customStartDate,
+                customEndDate: customEndDate,
+                selectedType: selectedType
+            )
+            .environmentObject(dataManager)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
 
             // 交易列表
             if filteredTransactions.isEmpty {
@@ -136,6 +136,13 @@ struct TransactionListView: View {
         }
         .navigationTitle(LocalizedString("transaction_records"))
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // 确保导航栏背景正常显示
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithDefaultBackground()
+            UINavigationBar.appearance().standardAppearance = appearance
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        }
         .sheet(item: $selectedTransaction) { transaction in
             TransactionDetailView(transaction: transaction)
                 .environmentObject(dataManager)

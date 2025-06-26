@@ -186,8 +186,9 @@ struct SyncResultCard: View {
             // 统计数据
             LazyVGrid(columns: [
                 GridItem(.flexible()),
+                GridItem(.flexible()),
                 GridItem(.flexible())
-            ], spacing: 16) {
+            ], spacing: 12) {
                 StatCard(
                     title: "新增交易",
                     value: result.transactionsAdded,
@@ -214,6 +215,20 @@ struct SyncResultCard: View {
                     value: result.categoriesDuplicated,
                     color: .gray,
                     icon: "folder.badge.questionmark"
+                )
+                
+                StatCard(
+                    title: "同步汇率",
+                    value: result.exchangeRatesSynced,
+                    color: .purple,
+                    icon: "chart.line.uptrend.xyaxis"
+                )
+                
+                StatCard(
+                    title: "货币设置",
+                    value: result.currencySettingsSynced ? 1 : 0,
+                    color: .mint,
+                    icon: "banknote"
                 )
             }
         }

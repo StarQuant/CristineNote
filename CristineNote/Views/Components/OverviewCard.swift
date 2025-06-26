@@ -56,11 +56,6 @@ struct OverviewCard: View {
     }
 
     private func formatCurrency(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "CNY"
-        formatter.currencySymbol = "¥"
-        formatter.maximumFractionDigits = amount.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "¥0"
+        return CristineNote.formatCurrency(amount, currency: dataManager.currentSystemCurrency)
     }
 }

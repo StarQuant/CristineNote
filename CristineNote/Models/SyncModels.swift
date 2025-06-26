@@ -7,14 +7,18 @@ struct SyncDataPackage: Codable {
     let transactions: [Transaction]
     let expenseCategories: [TransactionCategory]
     let incomeCategories: [TransactionCategory]
+    let systemCurrency: Currency
+    let exchangeRates: [String: Double]
     let timestamp: Date
     let packageId: UUID
     
-    init(deviceInfo: DeviceInfo, transactions: [Transaction], expenseCategories: [TransactionCategory], incomeCategories: [TransactionCategory]) {
+    init(deviceInfo: DeviceInfo, transactions: [Transaction], expenseCategories: [TransactionCategory], incomeCategories: [TransactionCategory], systemCurrency: Currency, exchangeRates: [String: Double]) {
         self.deviceInfo = deviceInfo
         self.transactions = transactions
         self.expenseCategories = expenseCategories
         self.incomeCategories = incomeCategories
+        self.systemCurrency = systemCurrency
+        self.exchangeRates = exchangeRates
         self.timestamp = Date()
         self.packageId = UUID()
     }
@@ -116,6 +120,8 @@ struct SyncResult: Codable {
     let transactionsDuplicated: Int
     let categoriesAdded: Int
     let categoriesDuplicated: Int
+    let exchangeRatesSynced: Int
+    let currencySettingsSynced: Bool
     let errorMessage: String?
     
     static let empty = SyncResult(
@@ -124,6 +130,8 @@ struct SyncResult: Codable {
         transactionsDuplicated: 0,
         categoriesAdded: 0,
         categoriesDuplicated: 0,
+        exchangeRatesSynced: 0,
+        currencySettingsSynced: false,
         errorMessage: nil
     )
 }

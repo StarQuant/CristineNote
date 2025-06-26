@@ -7,11 +7,14 @@ class DataManager: ObservableObject {
     @Published var expenseCategories: [TransactionCategory] = []
     @Published var incomeCategories: [TransactionCategory] = []
     @Published var currentLanguage: String = "zh-Hans"
+    @Published var currentSystemCurrency: Currency = Currency.defaultCurrency
+    @Published var exchangeRateService = ExchangeRateService()
     
     private let transactionsKey = "SavedTransactions"
     private let expenseCategoriesKey = "ExpenseCategories"
     private let incomeCategoriesKey = "IncomeCategories"
     private let languageKey = "AppLanguage"
+    private let systemCurrencyKey = "SystemCurrency"
     
 
     
@@ -38,6 +41,7 @@ class DataManager: ObservableObject {
         loadTransactions()
         loadCategories()
         loadLanguage()
+        loadSystemCurrency()
     }
     
     private func loadTransactions() {
@@ -262,14 +266,28 @@ class DataManager: ObservableObject {
         let filteredTransactions = getTransactions(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
         return filteredTransactions
             .filter { $0.type == .income }
-            .reduce(0) { $0 + $1.amount }
+            .reduce(0) { result, transaction in
+                let convertedAmount = exchangeRateService.convert(
+                    amount: transaction.originalAmount,
+                    from: transaction.originalCurrency,
+                    to: currentSystemCurrency
+                )
+                return result + convertedAmount
+            }
     }
     
     func getTotalExpense(for period: StatisticsPeriod = .thisMonth, customStartDate: Date? = nil, customEndDate: Date? = nil) -> Double {
         let filteredTransactions = getTransactions(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
         return filteredTransactions
             .filter { $0.type == .expense }
-            .reduce(0) { $0 + $1.amount }
+            .reduce(0) { result, transaction in
+                let convertedAmount = exchangeRateService.convert(
+                    amount: transaction.originalAmount,
+                    from: transaction.originalCurrency,
+                    to: currentSystemCurrency
+                )
+                return result + convertedAmount
+            }
     }
     
     func getBalance(for period: StatisticsPeriod = .thisMonth, customStartDate: Date? = nil, customEndDate: Date? = nil) -> Double {
@@ -309,10 +327,16 @@ class DataManager: ObservableObject {
         
         for transaction in filteredTransactions {
             let key = transaction.category.id.uuidString
+            let convertedAmount = exchangeRateService.convert(
+                amount: transaction.originalAmount,
+                from: transaction.originalCurrency,
+                to: currentSystemCurrency
+            )
+            
             if let existing = categoryAmounts[key] {
-                categoryAmounts[key] = (existing.category, existing.amount + transaction.amount)
+                categoryAmounts[key] = (existing.category, existing.amount + convertedAmount)
             } else {
-                categoryAmounts[key] = (transaction.category, transaction.amount)
+                categoryAmounts[key] = (transaction.category, convertedAmount)
             }
         }
         
@@ -327,10 +351,16 @@ class DataManager: ObservableObject {
         
         for transaction in filteredTransactions {
             let key = transaction.category.id.uuidString
+            let convertedAmount = exchangeRateService.convert(
+                amount: transaction.originalAmount,
+                from: transaction.originalCurrency,
+                to: currentSystemCurrency
+            )
+            
             if let existing = categoryAmounts[key] {
-                categoryAmounts[key] = (existing.category, existing.amount + transaction.amount)
+                categoryAmounts[key] = (existing.category, existing.amount + convertedAmount)
             } else {
-                categoryAmounts[key] = (transaction.category, transaction.amount)
+                categoryAmounts[key] = (transaction.category, convertedAmount)
             }
         }
         
@@ -373,6 +403,34 @@ class DataManager: ObservableObject {
     private func saveLanguage() {
         UserDefaults.standard.set(currentLanguage, forKey: languageKey)
         UserDefaults.standard.synchronize()
+    }
+    
+    // MARK: - 系统货币设置
+    private func loadSystemCurrency() {
+        if let currencyString = UserDefaults.standard.string(forKey: systemCurrencyKey),
+           let currency = Currency(rawValue: currencyString) {
+            currentSystemCurrency = currency
+        }
+    }
+    
+    func setSystemCurrency(_ currency: Currency) {
+        currentSystemCurrency = currency
+        UserDefaults.standard.set(currency.rawValue, forKey: systemCurrencyKey)
+        UserDefaults.standard.synchronize()
+    }
+    
+    // 格式化交易金额（按系统币种显示）
+    func formattedAmount(for transaction: Transaction) -> String {
+        return transaction.formattedAmount(
+            in: currentSystemCurrency,
+            exchangeRateService: exchangeRateService
+        )
+    }
+    
+    // 显示金额前缀（+/-）
+    func displayAmount(for transaction: Transaction) -> String {
+        let prefix = transaction.type == .income ? "+" : "-"
+        return prefix + formattedAmount(for: transaction)
     }
     
 

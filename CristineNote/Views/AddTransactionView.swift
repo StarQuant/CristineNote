@@ -7,6 +7,7 @@ struct AddTransactionView: View {
     @State private var selectedType: TransactionType = .expense
     @State private var amount: String = ""
     @State private var selectedCategory: TransactionCategory?
+    // 移除selectedCurrency状态，直接使用系统货币
     @State private var note: String = ""
     @State private var date = Date()
 
@@ -27,6 +28,7 @@ struct AddTransactionView: View {
                     VStack(spacing: 24) {
                         // 金额输入
                         AmountInputSection(amount: $amount)
+                        .environmentObject(dataManager)
 
                         // 分类选择
                         CategorySelectionSection(
@@ -92,6 +94,7 @@ struct AddTransactionView: View {
 
         let transaction = Transaction(
             amount: amountValue,
+            currency: dataManager.currentSystemCurrency,
             type: selectedType,
             category: category,
             note: note,

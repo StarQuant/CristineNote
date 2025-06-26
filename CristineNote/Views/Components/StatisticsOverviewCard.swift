@@ -9,23 +9,41 @@ struct StatisticsOverviewCard: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            HStack(spacing: 20) {
-                StatisticItem(
+            // 根据选择的类型显示对应的统计项
+            if selectedType == nil {
+                // 全部模式：垂直显示三个统计项
+                VStack(spacing: 8) {
+                    StatisticRowItem(
+                        title: LocalizedString("income"),
+                        value: formatCurrency(getIncomeAmount()),
+                        color: .green
+                    )
+                    
+                    StatisticRowItem(
+                        title: LocalizedString("expense"),
+                        value: formatCurrency(getExpenseAmount()),
+                        color: .red
+                    )
+                    
+                    StatisticRowItem(
+                        title: LocalizedString("surplus"),
+                        value: formatCurrency(getBalanceAmount()),
+                        color: getBalanceAmount() >= 0 ? .green : .red
+                    )
+                }
+            } else if selectedType == .income {
+                // 收入模式：只显示收入
+                StatisticRowItem(
                     title: LocalizedString("income"),
                     value: formatCurrency(getIncomeAmount()),
                     color: .green
                 )
-
-                StatisticItem(
+            } else {
+                // 支出模式：只显示支出
+                StatisticRowItem(
                     title: LocalizedString("expense"),
                     value: formatCurrency(getExpenseAmount()),
                     color: .red
-                )
-
-                StatisticItem(
-                    title: LocalizedString("surplus"),
-                    value: formatCurrency(getBalanceAmount()),
-                    color: getBalanceAmount() >= 0 ? .green : .red
                 )
             }
         }
@@ -58,12 +76,7 @@ struct StatisticsOverviewCard: View {
     }
 
     private func formatCurrency(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "CNY"
-        formatter.currencySymbol = "¥"
-        formatter.maximumFractionDigits = amount.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "¥0"
+        return CristineNote.formatCurrency(amount, currency: dataManager.currentSystemCurrency)
     }
 }
 
@@ -81,10 +94,61 @@ struct StatisticItem: View {
             Text(value)
                 .font(.system(.title3, weight: .semibold))
                 .foregroundColor(color)
-                .lineLimit(2)
-                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+struct StatisticRowItem: View {
+    let title: String
+    let value: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // 图标
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 32, height: 32)
+                
+                Image(systemName: getIconName())
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(color)
+            }
+            
+            // 文字内容
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fontWeight(.medium)
+                
+                Text(value)
+                    .font(.system(.title3, weight: .semibold))
+                    .foregroundColor(color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 6)
+    }
+    
+    private func getIconName() -> String {
+        switch title {
+        case LocalizedString("income"):
+            return "arrow.down.circle.fill"
+        case LocalizedString("expense"):
+            return "arrow.up.circle.fill"
+        case LocalizedString("surplus"):
+            return "wallet.pass.fill"
+        default:
+            return "circle.fill"
+        }
     }
 }

@@ -173,7 +173,8 @@ struct ImportDataView: View {
         // 备注
         let note = columns.count > 4 ? columns[4].trimmingCharacters(in: CharacterSet(charactersIn: "\"")) : ""
 
-        return Transaction(amount: amount, type: type, category: category, note: note, date: date)
+        // 导入的交易使用当前系统货币
+        return Transaction(amount: amount, currency: dataManager.currentSystemCurrency, type: type, category: category, note: note, date: date)
     }
 
     private func parseCSVColumns(_ line: String) -> [String] {
@@ -204,7 +205,8 @@ struct ImportDataView: View {
     private func isDuplicateTransaction(_ transaction: Transaction) -> Bool {
         return dataManager.transactions.contains { existing in
             abs(existing.date.timeIntervalSince(transaction.date)) < 60 && // 1分钟内
-            existing.amount == transaction.amount &&
+            existing.originalAmount == transaction.originalAmount &&
+            existing.originalCurrency == transaction.originalCurrency &&
             existing.type == transaction.type &&
             existing.category.id == transaction.category.id &&
             existing.note == transaction.note

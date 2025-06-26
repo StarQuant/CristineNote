@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var showingLanguageSelection = false
     @State private var showingImportSheet = false
     @State private var showingDataSync = false
+    @State private var showingCurrencySettings = false
+    @State private var showingExchangeRates = false
 
 
     var body: some View {
@@ -101,6 +103,42 @@ struct SettingsView: View {
             // 应用设置
             Section(LocalizedString("app_settings")) {
                 Button(action: {
+                    showingCurrencySettings = true
+                }) {
+                    HStack {
+                        Image(systemName: "dollarsign.circle")
+                            .foregroundColor(.green)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(LocalizedString("system_currency"))
+
+                            Text(dataManager.currentSystemCurrency.displayName)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                }
+                
+                Button(action: {
+                    showingExchangeRates = true
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .foregroundColor(.orange)
+                            .frame(width: 24)
+
+                        Text(LocalizedString("exchange_rates"))
+
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                }
+                
+                Button(action: {
                     showingLanguageSelection = true
                 }) {
                     HStack {
@@ -179,6 +217,14 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingDataSync) {
             DataSyncView(dataManager: dataManager)
+                .environmentObject(dataManager)
+        }
+        .sheet(isPresented: $showingCurrencySettings) {
+            CurrencySettingsView()
+                .environmentObject(dataManager)
+        }
+        .sheet(isPresented: $showingExchangeRates) {
+            ExchangeRateView()
                 .environmentObject(dataManager)
         }
     }

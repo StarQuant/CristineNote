@@ -5,13 +5,21 @@ struct CategoryAnalysisView: View {
     let period: StatisticsPeriod
     let customStartDate: Date
     let customEndDate: Date
-    let transactionType: TransactionType
+    let selectedType: TransactionType?
 
     private var categoryData: [(category: TransactionCategory, amount: Double)] {
-        if transactionType == .expense {
-            return dataManager.getCategoryExpenses(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+        if let type = selectedType {
+            // 特定类型的数据
+            if type == .expense {
+                return dataManager.getCategoryExpenses(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+            } else {
+                return dataManager.getCategoryIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+            }
         } else {
-            return dataManager.getCategoryIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+            // 全部类型：合并收入和支出数据
+            let expenses = dataManager.getCategoryExpenses(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+            let incomes = dataManager.getCategoryIncome(for: period, customStartDate: customStartDate, customEndDate: customEndDate)
+            return (expenses + incomes).sorted { $0.amount > $1.amount }
         }
     }
 
@@ -91,12 +99,7 @@ struct CategoryAnalysisRow: View {
     }
 
     private func formatCurrency(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "CNY"
-        formatter.currencySymbol = "¥"
-        formatter.maximumFractionDigits = amount.truncatingRemainder(dividingBy: 1) == 0 ? 0 : 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "¥0"
+        return CristineNote.formatCurrency(amount, currency: dataManager.currentSystemCurrency)
     }
 }
 

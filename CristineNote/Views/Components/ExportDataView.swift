@@ -87,7 +87,7 @@ struct ExportDataView: View {
             let date = dateFormatter.string(from: transaction.date)
             let type = MainActor.assumeIsolated { transaction.type.displayName }
             let category = MainActor.assumeIsolated { transaction.category.displayName(for: dataManager) }
-            let amount = String(transaction.amount)
+            let amount = String(transaction.originalAmount)
             let note = transaction.note.replacingOccurrences(of: "\"", with: "\"\"")
 
             csvString += "\(date),\(type),\(category),\(amount),\"\(note)\"\n"

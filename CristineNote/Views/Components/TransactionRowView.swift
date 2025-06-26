@@ -24,11 +24,21 @@ struct TransactionRowView: View {
 
                     Spacer()
 
-                    Text(transaction.displayAmount)
-                        .font(.system(.subheadline, weight: .semibold))
-                        .foregroundColor(transaction.type == .income ? .green : .red)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(dataManager.displayAmount(for: transaction))
+                            .font(.system(.subheadline, weight: .semibold))
+                            .foregroundColor(transaction.type == .income ? .green : .red)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        
+                        // 显示原始币种（如果与系统币种不同）
+                        if transaction.originalCurrency != dataManager.currentSystemCurrency {
+                            Text("(\(transaction.originalAmountText))")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
                 }
 
                 HStack {

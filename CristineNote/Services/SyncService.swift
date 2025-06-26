@@ -192,6 +192,8 @@ class SyncService: ObservableObject {
                 transactionsDuplicated: 0,
                 categoriesAdded: 0,
                 categoriesDuplicated: 0,
+                exchangeRatesSynced: 0,
+                currencySettingsSynced: false,
                 errorMessage: error.localizedDescription
             )
             isShowingProgress = false
@@ -216,7 +218,9 @@ class SyncService: ObservableObject {
                 deviceInfo: currentDeviceInfo,
                 transactions: dataManager.transactions,
                 expenseCategories: dataManager.expenseCategories,
-                incomeCategories: dataManager.incomeCategories
+                incomeCategories: dataManager.incomeCategories,
+                systemCurrency: dataManager.currentSystemCurrency,
+                exchangeRates: dataManager.exchangeRateService.getAllRates()
             )
             
             let packageData = try JSONEncoder().encode(syncPackage)
@@ -279,7 +283,9 @@ class SyncService: ObservableObject {
             transactionsDuplicated: 0,
             categoriesAdded: 0,
             categoriesDuplicated: 0,
-                            errorMessage: LocalizationManager.shared.localizedString(for: "sync_error_occurred")
+            exchangeRatesSynced: 0,
+            currencySettingsSynced: false,
+            errorMessage: LocalizationManager.shared.localizedString(for: "sync_error_occurred")
         )
         isShowingProgress = false
     }
@@ -291,8 +297,16 @@ class SyncService: ObservableObject {
         var transactionsDuplicated = 0
         var categoriesAdded = 0
         var categoriesDuplicated = 0
+        var exchangeRatesSynced = 0
+        var currencySettingsSynced = false
         
-        // 1. 同步分类数据
+        // 1. 同步货币设置（可选，询问用户是否同步系统货币）
+        currencySettingsSynced = await syncCurrencySettings(from: syncPackage)
+        
+        // 2. 同步汇率数据
+        exchangeRatesSynced = syncExchangeRates(from: syncPackage)
+        
+        // 3. 同步分类数据
         for category in syncPackage.expenseCategories + syncPackage.incomeCategories {
             if !isDuplicateCategory(category) {
                 dataManager.addCategory(category)
@@ -302,7 +316,7 @@ class SyncService: ObservableObject {
             }
         }
         
-        // 2. 同步交易数据
+        // 4. 同步交易数据
         for transaction in syncPackage.transactions {
             if !isDuplicateTransaction(transaction) {
                 // 确保分类存在，如果不存在则创建或使用默认分类
@@ -320,8 +334,50 @@ class SyncService: ObservableObject {
             transactionsDuplicated: transactionsDuplicated,
             categoriesAdded: categoriesAdded,
             categoriesDuplicated: categoriesDuplicated,
+            exchangeRatesSynced: exchangeRatesSynced,
+            currencySettingsSynced: currencySettingsSynced,
             errorMessage: nil
         )
+    }
+    
+    // MARK: - 货币和汇率同步
+    
+    private func syncCurrencySettings(from syncPackage: SyncDataPackage) async -> Bool {
+        // 只有当对方的系统货币与本地不同时才考虑同步
+        if syncPackage.systemCurrency != dataManager.currentSystemCurrency {
+            // 这里可以添加用户选择逻辑，现在默认保持本地设置
+            // 未来可以显示提示让用户选择是否同步货币设置
+            // return true 表示用户选择同步了货币设置
+            return false
+        }
+        return false
+    }
+    
+    private func syncExchangeRates(from syncPackage: SyncDataPackage) -> Int {
+        var syncedCount = 0
+        
+        // 合并汇率数据，保留最新的汇率信息
+        for (rateKey, rateValue) in syncPackage.exchangeRates {
+            let currentRate = dataManager.exchangeRateService.getRate(for: rateKey)
+            
+            // 如果本地没有这个汇率或者对方的汇率更新，则使用对方的汇率
+            if currentRate == 1.0 || rateValue != 1.0 {
+                // 解析汇率键
+                let components = rateKey.split(separator: "_")
+                if components.count == 2 {
+                    let fromCurrency = String(components[0])
+                    let toCurrency = String(components[1])
+                    
+                    if let from = Currency.fromAPICode(fromCurrency),
+                       let to = Currency.fromAPICode(toCurrency) {
+                        dataManager.exchangeRateService.setManualRate(from: from, to: to, rate: rateValue)
+                        syncedCount += 1
+                    }
+                }
+            }
+        }
+        
+        return syncedCount
     }
     
     // MARK: - 重复检测逻辑（增强版）
@@ -337,7 +393,8 @@ class SyncService: ObservableObject {
             let timeDiff = abs(existing.date.timeIntervalSince(transaction.date))
             
             return timeDiff < DuplicateDetectionConfig.timeToleranceInSeconds &&
-                   existing.amount == transaction.amount &&
+                   existing.originalAmount == transaction.originalAmount &&
+                   existing.originalCurrency == transaction.originalCurrency &&
                    existing.type == transaction.type &&
                    existing.category.id == transaction.category.id &&
                    existing.note == transaction.note
