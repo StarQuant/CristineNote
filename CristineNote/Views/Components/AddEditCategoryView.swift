@@ -6,29 +6,54 @@ struct AddEditCategoryView: View {
 
     @EnvironmentObject var dataManager: DataManager
     @EnvironmentObject var translationService: TranslationService
+    @EnvironmentObject var localizationManager: LocalizationManager
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name: String
-    @State private var englishName: String
+    @State private var primaryLanguageName: String
+    @State private var secondaryLanguageName: String
     @State private var iconName: String
     @State private var selectedColor: Color
-    @State private var nameDebounceTimer: Timer?
-    @State private var englishNameDebounceTimer: Timer?
     @State private var validIcons: [String] = []
+    @State private var isTranslating: Bool = false
+    @State private var showCheckmark: Bool = false
+    
+    // 计算当前系统语言是否为中文
+    private var isChineseSystem: Bool {
+        localizationManager.currentLanguage.hasPrefix("zh")
+    }
+    
+    // 根据系统语言决定输入框的标签
+    private var primaryFieldLabel: String {
+        isChineseSystem ? LocalizedString("category_name") : LocalizedString("english_name")
+    }
+    
+    private var secondaryFieldLabel: String {
+        isChineseSystem ? LocalizedString("english_name") : LocalizedString("category_name")
+    }
     
     init(type: TransactionType, category: TransactionCategory?) {
         self.type = type
         self.category = category
         
-        // 直接在init中初始化State变量
+        // 根据当前系统语言初始化输入框
         if let category = category {
-            self._name = State(initialValue: category.name)
-            self._englishName = State(initialValue: category.englishName ?? "")
+            // 编辑模式
+            let isSystemChinese = LocalizationManager.shared.currentLanguage.hasPrefix("zh")
+            if isSystemChinese {
+                // 系统语言是中文，主要字段是中文名，次要字段是英文名
+                self._primaryLanguageName = State(initialValue: category.name)
+                self._secondaryLanguageName = State(initialValue: category.englishName ?? "")
+            } else {
+                // 系统语言是英文或其他，主要字段是英文名，次要字段是中文名
+                self._primaryLanguageName = State(initialValue: category.englishName ?? "")
+                self._secondaryLanguageName = State(initialValue: category.name)
+            }
             self._iconName = State(initialValue: category.iconName)
             self._selectedColor = State(initialValue: category.color)
         } else {
-            self._name = State(initialValue: "")
-            self._englishName = State(initialValue: "")
+            // 新增模式
+            self._primaryLanguageName = State(initialValue: "")
+            self._secondaryLanguageName = State(initialValue: "")
             self._iconName = State(initialValue: "circle.fill")
             self._selectedColor = State(initialValue: Color.blue)
         }
@@ -64,27 +89,31 @@ struct AddEditCategoryView: View {
         NavigationView {
             Form {
                 Section {
-                    TextField(LocalizedString("category_name"), text: $name)
-                        .onChange(of: name) { newValue in
-                            // 防抖动翻译
-                            nameDebounceTimer?.invalidate()
-                            nameDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-                                if !newValue.isEmpty && englishName.isEmpty {
-                                    translateToEnglish(newValue)
-                                }
+                    TextField(primaryFieldLabel, text: $primaryLanguageName)
+                    
+                    HStack(spacing: 12) {
+                        TextField(secondaryFieldLabel, text: $secondaryLanguageName)
+                        
+                        Button(action: {
+                            translatePrimaryToSecondary()
+                        }) {
+                            if isTranslating {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .tint(.blue)
+                            } else if showCheckmark {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.green)
+                            } else {
+                                Text(LocalizedString("translate"))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(primaryLanguageName.isEmpty ? .gray : .blue)
                             }
                         }
-
-                    TextField(LocalizedString("english_name"), text: $englishName)
-                        .onChange(of: englishName) { newValue in
-                            // 防抖动翻译
-                            englishNameDebounceTimer?.invalidate()
-                            englishNameDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-                                if !newValue.isEmpty && name.isEmpty {
-                                    translateToChinese(newValue)
-                                }
-                            }
-                        }
+                        .disabled(primaryLanguageName.isEmpty || isTranslating)
+                        .buttonStyle(PlainButtonStyle())
+                    }
                 }
 
                 Section(LocalizedString("icon")) {
@@ -157,7 +186,20 @@ struct AddEditCategoryView: View {
                     Button(LocalizedString("save")) {
                         saveCategory()
                     }
-                    .disabled(name.isEmpty)
+                    .disabled(primaryLanguageName.isEmpty)
+                }
+                
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }) {
+                            Image(systemName: "keyboard.chevron.compact.down")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
             }
         }
@@ -193,10 +235,24 @@ struct AddEditCategoryView: View {
     }
 
     private func saveCategory() {
+        // 根据系统语言决定如何保存名称
+        let chineseName: String
+        let englishName: String?
+        
+        if isChineseSystem {
+            // 系统语言是中文，主要字段是中文名，次要字段是英文名
+            chineseName = primaryLanguageName
+            englishName = secondaryLanguageName.isEmpty ? nil : secondaryLanguageName
+        } else {
+            // 系统语言是英文或其他，主要字段是英文名，次要字段是中文名
+            chineseName = secondaryLanguageName.isEmpty ? primaryLanguageName : secondaryLanguageName
+            englishName = primaryLanguageName.isEmpty ? nil : primaryLanguageName
+        }
+        
         let newCategory = TransactionCategory(
             id: category?.id ?? UUID(),
-            name: name,
-            englishName: englishName.isEmpty ? nil : englishName,
+            name: chineseName,
+            englishName: englishName,
             iconName: iconName,
             color: selectedColor,
             type: type
@@ -212,29 +268,39 @@ struct AddEditCategoryView: View {
         dismiss()
     }
 
-    // 翻译中文到英文
-    private func translateToEnglish(_ text: String) {
+    // 翻译主要语言到次要语言
+    private func translatePrimaryToSecondary() {
+        guard !primaryLanguageName.isEmpty else { return }
+        
+        isTranslating = true
+        showCheckmark = false
+        
         Task {
             do {
-                let translated = try await translationService.translateToEnglish(text)
+                let translated: String
+                if isChineseSystem {
+                    // 中文系统：主要字段是中文，翻译为英文
+                    translated = try await translationService.translateToEnglish(primaryLanguageName)
+                } else {
+                    // 英文或其他系统：主要字段是英文，翻译为中文
+                    translated = try await translationService.translateText(primaryLanguageName)
+                }
+                
                 await MainActor.run {
-                    englishName = translated
+                    secondaryLanguageName = translated
+                    isTranslating = false
+                    showCheckmark = true
+                    
+                    // 1.5秒后隐藏勾号
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showCheckmark = false
+                    }
                 }
             } catch {
-                // 翻译失败时静默处理，不影响用户体验
-            }
-        }
-    }
-
-    // 翻译英文到中文
-    private func translateToChinese(_ text: String) {
-        Task {
-            do {
-                let translated = try await translationService.translateText(text)
                 await MainActor.run {
-                    name = translated
+                    isTranslating = false
+                    showCheckmark = false
                 }
-            } catch {
                 // 翻译失败时静默处理，不影响用户体验
             }
         }

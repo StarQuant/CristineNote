@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @StateObject private var dataManager = DataManager()
     @StateObject private var translationService = TranslationService()
+    @EnvironmentObject var localizationManager: LocalizationManager
 
     var body: some View {
         TabView {
@@ -12,6 +13,7 @@ struct MainTabView: View {
                     LocalizedText("home")
                 }
                 .environmentObject(dataManager)
+                .environmentObject(localizationManager)
 
             StatisticsView()
                 .tabItem {
@@ -19,6 +21,7 @@ struct MainTabView: View {
                     LocalizedText("statistics")
                 }
                 .environmentObject(dataManager)
+                .environmentObject(localizationManager)
 
             CategoriesView()
                 .tabItem {
@@ -26,6 +29,7 @@ struct MainTabView: View {
                     LocalizedText("categories")
                 }
                 .environmentObject(dataManager)
+                .environmentObject(localizationManager)
 
             SettingsView()
                 .tabItem {
@@ -34,6 +38,7 @@ struct MainTabView: View {
                 }
                 .environmentObject(translationService)
                 .environmentObject(dataManager)
+                .environmentObject(localizationManager)
         }
         .accentColor(.blue)
         .onAppear {

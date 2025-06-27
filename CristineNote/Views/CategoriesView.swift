@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CategoriesView: View {
     @EnvironmentObject var dataManager: DataManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var selectedType: TransactionType = .expense
     @State private var showingAddCategory = false
     @State private var editingCategory: TransactionCategory?
@@ -76,11 +77,13 @@ struct CategoriesView: View {
             AddEditCategoryView(type: selectedType, category: nil)
                 .environmentObject(dataManager)
                 .environmentObject(TranslationService())
+                .environmentObject(localizationManager)
         }
         .sheet(item: $editingCategory) { category in
             AddEditCategoryView(type: selectedType, category: category)
                 .environmentObject(dataManager)
                 .environmentObject(TranslationService())
+                .environmentObject(localizationManager)
         }
         .alert(LocalizedString("delete_category"), isPresented: $showingDeleteAlert) {
             Button(LocalizedString("cancel"), role: .cancel) { }

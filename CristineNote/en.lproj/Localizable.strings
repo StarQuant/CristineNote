@@ -199,6 +199,12 @@
 "currency_cny" = "Chinese Yuan";
 "currency_usd" = "US Dollar";
 
+/* Category Input Field Labels */
+"category_name_chinese" = "分类名称（中文）";
+"category_name_english" = "Category Name (English)";
+"chinese_name" = "中文名称";
+"translate" = "Translate";
+
 /* Device Sync */
 "device_sync" = "Device Sync";
 "data_sync" = "Data Sync";

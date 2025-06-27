@@ -199,6 +199,12 @@
 "currency_cny" = "人民币";
 "currency_usd" = "美元";
 
+/* 分类输入框标签 */
+"category_name_chinese" = "分类名称（中文）";
+"category_name_english" = "Category Name (English)";
+"chinese_name" = "中文名称";
+"translate" = "翻译";
+
 /* 设备同步 */
 "device_sync" = "设备同步";
 "data_sync" = "数据同步";

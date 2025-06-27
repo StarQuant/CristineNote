@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct CristineNoteApp: App {
+    @StateObject private var localizationManager = LocalizationManager.shared
+    
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environmentObject(localizationManager)
         }
     }
 }
