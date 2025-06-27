@@ -54,8 +54,10 @@ class ExchangeRateService: ObservableObject {
             await MainActor.run {
                 self.rates = allRates
                 self.lastUpdateTime = Date()
-                self.saveRates()
                 self.isLoading = false
+                // 强制触发UI更新
+                self.objectWillChange.send()
+                self.saveRates()
             }
         } catch {
             await MainActor.run {
@@ -83,19 +85,23 @@ class ExchangeRateService: ObservableObject {
     }
     
     // MARK: - 手动设置汇率
-    func setManualRate(from: Currency, to: Currency, rate: Double) {
-        if rates[from.apiCode] == nil {
-            rates[from.apiCode] = [:]
+    func setManualRate(from: Currency, to: Currency, rate: Double) async {
+        await MainActor.run {
+            if rates[from.apiCode] == nil {
+                rates[from.apiCode] = [:]
+            }
+            rates[from.apiCode]?[to.apiCode] = rate
+            
+            // 计算反向汇率
+            if rates[to.apiCode] == nil {
+                rates[to.apiCode] = [:]
+            }
+            rates[to.apiCode]?[from.apiCode] = 1.0 / rate
+            
+            // 强制触发UI更新
+            objectWillChange.send()
+            saveRates()
         }
-        rates[from.apiCode]?[to.apiCode] = rate
-        
-        // 计算反向汇率
-        if rates[to.apiCode] == nil {
-            rates[to.apiCode] = [:]
-        }
-        rates[to.apiCode]?[from.apiCode] = 1.0 / rate
-        
-        saveRates()
     }
     
     // MARK: - 获取汇率显示值

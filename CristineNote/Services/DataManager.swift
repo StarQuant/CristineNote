@@ -172,6 +172,27 @@ class DataManager: ObservableObject {
         }
     }
     
+    func updateTransaction(originalId: UUID, updatedTransaction: Transaction) {
+        if let index = transactions.firstIndex(where: { $0.id == originalId }) {
+            // 创建新的transaction，保持原始ID
+            transactions[index] = Transaction(
+                id: originalId,
+                amount: updatedTransaction.originalAmount,
+                currency: updatedTransaction.originalCurrency,
+                type: updatedTransaction.type,
+                category: updatedTransaction.category,
+                note: updatedTransaction.note,
+                chineseNote: updatedTransaction.chineseNote,
+                englishNote: updatedTransaction.englishNote,
+                date: updatedTransaction.date,
+                isChineseNoteTranslated: updatedTransaction.isChineseNoteTranslated,
+                isEnglishNoteTranslated: updatedTransaction.isEnglishNoteTranslated,
+                isEdited: updatedTransaction.isEdited
+            )
+            saveTransactions()
+        }
+    }
+    
     // MARK: - 分类操作
     func addCategory(_ category: TransactionCategory) {
         switch category.type {

@@ -34,6 +34,7 @@ class SyncService: ObservableObject {
     
     /// 开始生成模式同步（显示二维码等待连接）
     func startGenerateMode() {
+        print("SyncService.startGenerateMode() called")
         lastOperation = .generateMode
         currentDeviceInfo = DeviceInfo()
         networkManager.startAdvertising(with: currentDeviceInfo)
@@ -129,11 +130,8 @@ class SyncService: ObservableObject {
     private func handleConnectionStateChange(_ state: MCSessionState, peer: MCPeerID) {
         switch state {
         case .connected:
-            // 连接成功后开始同步
+            // 连接成功后显示开始页面，等待用户点击开始
             syncStatus = LocalizationManager.shared.localizedString(for: "sync_connected_start")
-            Task {
-                await startDataSync()
-            }
         case .notConnected:
             if isShowingProgress {
                 syncStatus = LocalizationManager.shared.localizedString(for: "sync_connection_lost")
@@ -165,7 +163,13 @@ class SyncService: ObservableObject {
         }
     }
     
-    private func startDataSync() async {
+    func startDataSync() {
+        Task {
+            await performStartDataSync()
+        }
+    }
+    
+    private func performStartDataSync() async {
         isShowingProgress = true
         syncProgress = 0.1
         syncStatus = LocalizationManager.shared.localizedString(for: "sync_preparing")
@@ -256,11 +260,6 @@ class SyncService: ObservableObject {
             syncProgress = 1.0
             syncStatus = LocalizationManager.shared.localizedString(for: "sync_completed")
             
-            // 延迟关闭进度显示
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                self.isShowingProgress = false
-            }
-            
         } catch {
             handleSyncError(Data())
         }
@@ -269,11 +268,6 @@ class SyncService: ObservableObject {
     private func handleSyncComplete(_ data: Data) async {
         syncProgress = 1.0
         syncStatus = LocalizationManager.shared.localizedString(for: "sync_completed")
-        
-        // 延迟关闭进度显示
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.isShowingProgress = false
-        }
     }
     
     private func handleSyncError(_ data: Data) {
@@ -304,7 +298,7 @@ class SyncService: ObservableObject {
         currencySettingsSynced = await syncCurrencySettings(from: syncPackage)
         
         // 2. 同步汇率数据
-        exchangeRatesSynced = syncExchangeRates(from: syncPackage)
+        exchangeRatesSynced = await syncExchangeRates(from: syncPackage)
         
         // 3. 同步分类数据
         for category in syncPackage.expenseCategories + syncPackage.incomeCategories {
@@ -353,7 +347,7 @@ class SyncService: ObservableObject {
         return false
     }
     
-    private func syncExchangeRates(from syncPackage: SyncDataPackage) -> Int {
+    private func syncExchangeRates(from syncPackage: SyncDataPackage) async -> Int {
         var syncedCount = 0
         
         // 合并汇率数据，保留最新的汇率信息
@@ -370,7 +364,7 @@ class SyncService: ObservableObject {
                     
                     if let from = Currency.fromAPICode(fromCurrency),
                        let to = Currency.fromAPICode(toCurrency) {
-                        dataManager.exchangeRateService.setManualRate(from: from, to: to, rate: rateValue)
+                        await dataManager.exchangeRateService.setManualRate(from: from, to: to, rate: rateValue)
                         syncedCount += 1
                     }
                 }
@@ -397,7 +391,9 @@ class SyncService: ObservableObject {
                    existing.originalCurrency == transaction.originalCurrency &&
                    existing.type == transaction.type &&
                    existing.category.id == transaction.category.id &&
-                   existing.note == transaction.note
+                   existing.note == transaction.note &&
+                   existing.chineseNote == transaction.chineseNote &&
+                   existing.englishNote == transaction.englishNote
         }
     }
     

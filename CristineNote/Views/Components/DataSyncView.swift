@@ -125,20 +125,12 @@ struct DataSyncView: View {
         .sheet(isPresented: $showingProgress) {
             SyncProgressView(syncService: syncService, isPresented: $showingProgress)
         }
-        .fullScreenCover(isPresented: Binding<Bool>(
-            get: { 
-                let isAdvertising = syncService.syncState == .advertising
-                return isAdvertising
-            },
-            set: { _ in }
-        )) {
+        .fullScreenCover(isPresented: $isGeneratingQR) {
             NavigationView {
                 QRCodeGeneratorView(deviceInfo: deviceInfo) { qrGenerated in
-                    // 二维码生成完成后，重置等待状态
-                    DispatchQueue.main.async {
-                        print("QR Code generated: \(qrGenerated)")
-                        isGeneratingQR = false
-                    }
+                    // 二维码生成完成后，不要关闭界面，等待连接
+                    print("QR Code generated: \(qrGenerated)")
+                    // 移除自动关闭逻辑，保持界面打开等待连接
                 }
                 .navigationTitle(LocalizedString("waiting_connection"))
                 .navigationBarTitleDisplayMode(.inline)
@@ -150,10 +142,6 @@ struct DataSyncView: View {
                         }
                     }
                 }
-            }
-            .onDisappear {
-                // 当QR视图消失时，确保重置状态
-                resetGeneratingState()
             }
         }
         .alert(LocalizedString("camera_permission_needed"), isPresented: $showingPermissionAlert) {
@@ -168,19 +156,16 @@ struct DataSyncView: View {
         }
         .onChange(of: syncService.syncState) { newState in
             print("Sync state changed to: \(newState)")
-            if case .connected = newState {
+            switch newState {
+            case .connected:
                 showingProgress = true
-            }
-            // 如果同步失败或完成，重置生成状态
-            if case .failed = newState {
+                // 连接成功后立即关闭QR生成界面
+                isGeneratingQR = false
+                print("Connection successful, closing QR view")
+            case .failed, .completed, .idle:
                 resetGeneratingState()
-            }
-            if case .completed = newState {
-                resetGeneratingState()
-            }
-            // 如果回到idle状态，也重置
-            if case .idle = newState {
-                resetGeneratingState()
+            default:
+                break
             }
         }
         .onChange(of: syncService.isShowingProgress) { isShowing in
@@ -190,6 +175,8 @@ struct DataSyncView: View {
             deviceInfo = DeviceInfo()
             // 每次出现时重置状态
             resetGeneratingState()
+            // 完全重置同步服务
+            syncService.resetCompletely()
         }
     }
     
@@ -200,17 +187,17 @@ struct DataSyncView: View {
     
     private func startSync() {
         print("Starting sync with mode: \(selectedMode)")
+        
+        // 确保先重置状态
+        syncService.reset()
+        
         switch selectedMode {
         case .generate:
             // 重置设备信息并显示生成状态
             deviceInfo = DeviceInfo()
             isGeneratingQR = true
-            
-            // 立即开始生成过程
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                print("Starting generate mode")
-                syncService.startGenerateMode()
-            }
+            print("Set isGeneratingQR to true, starting generate mode")
+            syncService.startGenerateMode()
             
         case .scan:
             checkCameraPermission { granted in

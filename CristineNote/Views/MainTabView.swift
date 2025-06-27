@@ -13,6 +13,7 @@ struct MainTabView: View {
                     LocalizedText("home")
                 }
                 .environmentObject(dataManager)
+                .environmentObject(translationService)
                 .environmentObject(localizationManager)
 
             StatisticsView()
@@ -21,6 +22,7 @@ struct MainTabView: View {
                     LocalizedText("statistics")
                 }
                 .environmentObject(dataManager)
+                .environmentObject(translationService)
                 .environmentObject(localizationManager)
 
             CategoriesView()
@@ -29,6 +31,7 @@ struct MainTabView: View {
                     LocalizedText("categories")
                 }
                 .environmentObject(dataManager)
+                .environmentObject(translationService)
                 .environmentObject(localizationManager)
 
             SettingsView()

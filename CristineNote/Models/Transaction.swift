@@ -115,23 +115,49 @@ struct Transaction: Identifiable, Codable {
     let type: TransactionType
     var category: TransactionCategory
     let note: String
+    let chineseNote: String?    // 中文备注
+    let englishNote: String?    // 英文备注
     let date: Date
     var originalNote: String? // 用于存储翻译前的原文
+    let isChineseNoteTranslated: Bool   // 中文备注是否为翻译版本
+    let isEnglishNoteTranslated: Bool   // 英文备注是否为翻译版本
+    let isEdited: Bool                  // 是否被编辑过
 
-    init(amount: Double, currency: Currency = Currency.defaultCurrency, type: TransactionType, category: TransactionCategory, note: String = "", date: Date = Date()) {
+    init(amount: Double, currency: Currency = Currency.defaultCurrency, type: TransactionType, category: TransactionCategory, note: String = "", chineseNote: String? = nil, englishNote: String? = nil, date: Date = Date(), isChineseNoteTranslated: Bool = false, isEnglishNoteTranslated: Bool = false, isEdited: Bool = false) {
         self.id = UUID()
         self.originalAmount = amount
         self.originalCurrency = currency
         self.type = type
         self.category = category
         self.note = note
+        self.chineseNote = chineseNote
+        self.englishNote = englishNote
         self.date = date
         self.originalNote = nil
+        self.isChineseNoteTranslated = isChineseNoteTranslated
+        self.isEnglishNoteTranslated = isEnglishNoteTranslated
+        self.isEdited = isEdited
+    }
+    
+    init(id: UUID, amount: Double, currency: Currency = Currency.defaultCurrency, type: TransactionType, category: TransactionCategory, note: String = "", chineseNote: String? = nil, englishNote: String? = nil, date: Date = Date(), isChineseNoteTranslated: Bool = false, isEnglishNoteTranslated: Bool = false, isEdited: Bool = false) {
+        self.id = id
+        self.originalAmount = amount
+        self.originalCurrency = currency
+        self.type = type
+        self.category = category
+        self.note = note
+        self.chineseNote = chineseNote
+        self.englishNote = englishNote
+        self.date = date
+        self.originalNote = nil
+        self.isChineseNoteTranslated = isChineseNoteTranslated
+        self.isEnglishNoteTranslated = isEnglishNoteTranslated
+        self.isEdited = isEdited
     }
     
     // 为了向后兼容旧数据
     enum CodingKeys: String, CodingKey {
-        case id, originalAmount, originalCurrency, type, category, note, date, originalNote
+        case id, originalAmount, originalCurrency, type, category, note, chineseNote, englishNote, date, originalNote, isChineseNoteTranslated, isEnglishNoteTranslated, isEdited
         case amount // 兼容旧字段
     }
     
@@ -142,8 +168,13 @@ struct Transaction: Identifiable, Codable {
         type = try container.decode(TransactionType.self, forKey: .type)
         category = try container.decode(TransactionCategory.self, forKey: .category)
         note = try container.decode(String.self, forKey: .note)
+        chineseNote = try? container.decode(String.self, forKey: .chineseNote)
+        englishNote = try? container.decode(String.self, forKey: .englishNote)
         date = try container.decode(Date.self, forKey: .date)
         originalNote = try? container.decode(String.self, forKey: .originalNote)
+        isChineseNoteTranslated = try container.decodeIfPresent(Bool.self, forKey: .isChineseNoteTranslated) ?? false
+        isEnglishNoteTranslated = try container.decodeIfPresent(Bool.self, forKey: .isEnglishNoteTranslated) ?? false
+        isEdited = try container.decodeIfPresent(Bool.self, forKey: .isEdited) ?? false
         
         // 处理新旧字段兼容
         if let newAmount = try? container.decode(Double.self, forKey: .originalAmount) {
@@ -164,8 +195,13 @@ struct Transaction: Identifiable, Codable {
         try container.encode(type, forKey: .type)
         try container.encode(category, forKey: .category)
         try container.encode(note, forKey: .note)
+        try container.encodeIfPresent(chineseNote, forKey: .chineseNote)
+        try container.encodeIfPresent(englishNote, forKey: .englishNote)
         try container.encode(date, forKey: .date)
         try container.encodeIfPresent(originalNote, forKey: .originalNote)
+        try container.encode(isChineseNoteTranslated, forKey: .isChineseNoteTranslated)
+        try container.encode(isEnglishNoteTranslated, forKey: .isEnglishNoteTranslated)
+        try container.encode(isEdited, forKey: .isEdited)
     }
 
     // 格式化显示金额（在指定货币下）
@@ -186,6 +222,54 @@ struct Transaction: Identifiable, Codable {
     var displayAmount: String {
         let prefix = type == .income ? "+" : "-"
         return prefix + originalAmountText
+    }
+    
+    // 根据系统语言获取显示的备注
+    @MainActor func displayNote(localizationManager: LocalizationManager) -> String {
+        let isChineseSystem = localizationManager.currentLanguage.hasPrefix("zh")
+        
+        if isChineseSystem {
+            // 中文系统：优先显示中文备注，其次英文备注，最后原始备注
+            return chineseNote ?? englishNote ?? note
+        } else {
+            // 英文或其他系统：优先显示英文备注，其次中文备注，最后原始备注
+            return englishNote ?? chineseNote ?? note
+        }
+    }
+    
+    // 判断当前显示的备注是否是翻译版本
+    @MainActor func isDisplayedNoteTranslated(localizationManager: LocalizationManager) -> Bool {
+        let isChineseSystem = localizationManager.currentLanguage.hasPrefix("zh")
+        let displayedNote = displayNote(localizationManager: localizationManager)
+        
+        // 如果没有备注显示，就不是翻译
+        guard !displayedNote.isEmpty else { return false }
+        
+        if isChineseSystem {
+            // 中文系统：优先显示中文备注，其次英文备注，最后原始备注
+            if let chineseNote = chineseNote, !chineseNote.isEmpty {
+                // 显示中文备注，检查是否为翻译版本
+                return isChineseNoteTranslated
+            } else if let englishNote = englishNote, !englishNote.isEmpty {
+                // 显示英文备注，检查是否为翻译版本
+                return isEnglishNoteTranslated
+            } else {
+                // 显示主备注，如果系统是中文但备注是英文时添加的，算作翻译
+                return false
+            }
+        } else {
+            // 英文系统：优先显示英文备注，其次中文备注，最后原始备注
+            if let englishNote = englishNote, !englishNote.isEmpty {
+                // 显示英文备注，检查是否为翻译版本
+                return isEnglishNoteTranslated
+            } else if let chineseNote = chineseNote, !chineseNote.isEmpty {
+                // 显示中文备注，检查是否为翻译版本
+                return isChineseNoteTranslated
+            } else {
+                // 显示主备注，如果系统是英文但备注是中文时添加的，算作翻译
+                return false
+            }
+        }
     }
 }
 

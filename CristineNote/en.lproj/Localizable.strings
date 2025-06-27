@@ -41,17 +41,28 @@
 
 /* Add Transaction */
 "add_transaction" = "Add Transaction";
+"edit_transaction" = "Edit Transaction";
 "amount" = "Amount";
 "enter_amount" = "Enter amount";
 "category" = "Category";
 "select_category" = "Select category";
 "note" = "Note";
 "enter_note" = "Enter note (optional)";
+"chinese_note" = "Chinese Note";
+"english_note" = "English Note";
+"enter_chinese_note" = "Enter Chinese note";
+"enter_english_note" = "Enter English note";
+"chinese_translation" = "Chinese Translation";
+"english_translation" = "English Translation";
 "date" = "Date";
 "type" = "Type";
 
 /* Statistics Page */
 "statistics" = "Statistics";
+"category_frequency_ranking" = "Category Frequency Ranking";
+"transactions" = "transactions";
+"times" = "times";
+"no_frequency_data" = "No frequency data";
 "category_analysis" = "Category Analysis";
 "trend_analysis" = "Trend Analysis";
 "category_distribution" = "Category Distribution";
@@ -285,6 +296,16 @@
 "save" = "Save";
 "other" = "Other";
 "generating" = "Generating...";
+
+/* New Sync Interface */
+"connection_successful" = "Connection Successful";
+"start_sync" = "Start Sync";
+"tap_start_sync" = "Tap to start syncing data";
+"swipe_down_to_close" = "Swipe down to close";
+"new_transactions" = "New Transactions";
+"new_categories" = "New Categories";
+"duplicate_transactions" = "Duplicate Transactions";
+"duplicate_categories" = "Duplicate Categories";
 
 /* Ranking Statistics */
 "expense_ranking" = "Expense Ranking";

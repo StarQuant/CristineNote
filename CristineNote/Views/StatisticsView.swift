@@ -83,6 +83,15 @@ struct StatisticsView: View {
                 )
                 .environmentObject(dataManager)
 
+                // 分类使用频次排行
+                CategoryFrequencyRankingView(
+                    period: selectedPeriod,
+                    customStartDate: customStartDate,
+                    customEndDate: customEndDate,
+                    selectedType: selectedType
+                )
+                .environmentObject(dataManager)
+
                 // 与上月对比统计
                 MonthComparisonView(
                     period: selectedPeriod,

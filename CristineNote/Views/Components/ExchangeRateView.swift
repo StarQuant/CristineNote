@@ -94,6 +94,7 @@ struct ExchangeRateView: View {
                             if fromCurrency != toCurrency {
                                 RateRowView(from: fromCurrency, to: toCurrency)
                                     .environmentObject(dataManager)
+                                    .id("\(fromCurrency.apiCode)-\(toCurrency.apiCode)-\(exchangeRateService.rates.hashValue)")
                             }
                         }
                     }
@@ -238,16 +239,16 @@ struct ManualRateInputView: View {
                     .disabled(!isFormValid)
                 }
                 
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button(action: {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }) {
-                        Image(systemName: "keyboard.chevron.compact.down")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.gray)
-                    }
-                }
+                                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button(action: {
+                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            }) {
+                                Image(systemName: "keyboard.chevron.compact.down")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.gray)
+                            }
+                        }
             }
         }
         .onAppear {
@@ -278,7 +279,11 @@ struct ManualRateInputView: View {
     private func saveRate() {
         guard let rate = Double(rateValue), rate > 0 else { return }
         
-        exchangeRateService.setManualRate(from: fromCurrency, to: toCurrency, rate: rate)
-        dismiss()
+        Task {
+            await exchangeRateService.setManualRate(from: fromCurrency, to: toCurrency, rate: rate)
+            await MainActor.run {
+                dismiss()
+            }
+        }
     }
 } 

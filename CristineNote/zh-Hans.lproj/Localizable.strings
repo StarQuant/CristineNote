@@ -41,17 +41,28 @@
 
 /* 添加交易 */
 "add_transaction" = "添加交易";
+"edit_transaction" = "编辑交易";
 "amount" = "金额";
 "enter_amount" = "输入金额";
 "category" = "分类";
 "select_category" = "选择分类";
 "note" = "备注";
 "enter_note" = "输入备注(可选)";
+"chinese_note" = "中文备注";
+"english_note" = "英文备注";
+"enter_chinese_note" = "输入中文备注";
+"enter_english_note" = "输入英文备注";
+"chinese_translation" = "中文翻译";
+"english_translation" = "英文翻译";
 "date" = "日期";
 "type" = "类型";
 
 /* 统计页面 */
 "statistics" = "统计";
+"category_frequency_ranking" = "分类使用频次排行";
+"transactions" = "笔交易";
+"times" = "次";
+"no_frequency_data" = "暂无频次数据";
 "category_analysis" = "分类分析";
 "trend_analysis" = "趋势分析";
 "category_distribution" = "分类分布";
@@ -285,6 +296,16 @@
 "save" = "保存";
 "other" = "其他";
 "generating" = "生成中...";
+
+/* 新同步界面 */
+"connection_successful" = "连接成功";
+"start_sync" = "开始同步";
+"tap_start_sync" = "点击开始同步数据";
+"swipe_down_to_close" = "向下滑动关闭";
+"new_transactions" = "新增交易";
+"new_categories" = "新增分类";
+"duplicate_transactions" = "重复交易";
+"duplicate_categories" = "重复分类";
 
 /* 排行统计 */
 "expense_ranking" = "支出排行";

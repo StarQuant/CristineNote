@@ -54,14 +54,21 @@ struct CategoriesView: View {
                     ForEach(categories, id: \.id) { category in
                         CategoryRowView(category: category)
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(LocalizedString("edit")) {
+                                // 编辑按钮
+                                Button(action: {
                                     editCategory(category)
+                                }) {
+                                    Image(systemName: "pencil")
                                 }
                                 .tint(.orange)
 
-                                Button(LocalizedString("delete"), role: .destructive) {
+                                // 删除按钮
+                                Button(action: {
                                     deleteCategory(category)
+                                }) {
+                                    Image(systemName: "trash")
                                 }
+                                .tint(.red)
                             }
                     }
                     .onMove { source, destination in

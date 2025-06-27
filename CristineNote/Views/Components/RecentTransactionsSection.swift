@@ -2,6 +2,8 @@ import SwiftUI
 
 struct RecentTransactionsSection: View {
     @EnvironmentObject var dataManager: DataManager
+    @EnvironmentObject var translationService: TranslationService
+    @EnvironmentObject var localizationManager: LocalizationManager
 
     var recentTransactions: [Transaction] {
         Array(dataManager.transactions.sorted { $0.date > $1.date }.prefix(10))
@@ -15,7 +17,7 @@ struct RecentTransactionsSection: View {
 
                 Spacer()
 
-                NavigationLink(destination: TransactionListView().environmentObject(dataManager)) {
+                NavigationLink(destination: TransactionListView().environmentObject(dataManager).environmentObject(translationService).environmentObject(localizationManager)) {
                     Text(LocalizedString("view_all"))
                         .font(.subheadline)
                         .foregroundColor(.blue)
@@ -43,6 +45,7 @@ struct RecentTransactionsSection: View {
                 LazyVStack(spacing: 8) {
                     ForEach(recentTransactions) { transaction in
                         TransactionRowView(transaction: transaction)
+                            .environmentObject(localizationManager)
                     }
                 }
             }

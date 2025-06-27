@@ -2,7 +2,14 @@ import SwiftUI
 
 struct TransactionRowView: View {
     @EnvironmentObject var dataManager: DataManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     let transaction: Transaction
+    let showIcons: Bool // 是否显示图标
+    
+    init(transaction: Transaction, showIcons: Bool = false) {
+        self.transaction = transaction
+        self.showIcons = showIcons
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -19,8 +26,27 @@ struct TransactionRowView: View {
             // 交易信息
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(transaction.category.displayName(for: dataManager))
-                        .font(.system(.subheadline, weight: .medium))
+                    if showIcons {
+                        HStack(spacing: 4) {
+                            Text(transaction.category.displayName(for: dataManager))
+                                .font(.system(.subheadline, weight: .medium))
+                            
+                            // 显示翻译图标（如果是翻译版本）
+                            if transaction.isDisplayedNoteTranslated(localizationManager: localizationManager) {
+                                TranslationIcon(size: 10)
+                            }
+                            
+                            // 显示编辑图标（如果被编辑过）
+                            if transaction.isEdited {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 8, weight: .medium))
+                                    .foregroundColor(.orange)
+                            }
+                        }
+                    } else {
+                        Text(transaction.category.displayName(for: dataManager))
+                            .font(.system(.subheadline, weight: .medium))
+                    }
 
                     Spacer()
 
@@ -42,8 +68,9 @@ struct TransactionRowView: View {
                 }
 
                 HStack {
-                    if !transaction.note.isEmpty {
-                        Text(transaction.note)
+                    let displayNote = transaction.displayNote(localizationManager: localizationManager)
+                    if !displayNote.isEmpty {
+                        Text(displayNote)
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .lineLimit(1)

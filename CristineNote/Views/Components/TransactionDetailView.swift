@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TransactionDetailView: View {
     @EnvironmentObject var dataManager: DataManager
+    @EnvironmentObject var localizationManager: LocalizationManager
     @Environment(\.dismiss) private var dismiss
     let transaction: Transaction
 
@@ -49,16 +50,18 @@ struct TransactionDetailView: View {
                             icon: "calendar"
                         )
                         
-                        if !transaction.note.isEmpty {
+                        let displayNote = transaction.displayNote(localizationManager: localizationManager)
+                        if !displayNote.isEmpty {
                             Divider()
                                 .padding(.leading, 44)
                             
                             // 备注
-                            DetailRowView(
+                            NoteDetailRowView(
                                 title: LocalizedString("note"),
-                                content: transaction.note,
+                                content: displayNote,
                                 icon: "note.text",
-                                isMultiLine: true
+                                isTranslated: transaction.isDisplayedNoteTranslated(localizationManager: localizationManager),
+                                isEdited: transaction.isEdited
                             )
                         }
                     }
@@ -119,6 +122,53 @@ struct DetailRowView: View {
                     .foregroundColor(.primary)
                     .lineLimit(isMultiLine ? nil : 1)
                     .fixedSize(horizontal: false, vertical: isMultiLine)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+}
+
+
+struct NoteDetailRowView: View {
+    let title: String
+    let content: String
+    let icon: String
+    let isTranslated: Bool
+    let isEdited: Bool
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(.blue)
+                .font(.system(size: 16))
+                .frame(width: 20)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    // 显示翻译图标（如果是翻译版本）
+                    if isTranslated {
+                        TranslationIcon(size: 12)
+                    }
+                    
+                    // 显示编辑图标（如果被编辑过）
+                    if isEdited {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.orange)
+                    }
+                }
+                
+                Text(content)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer()

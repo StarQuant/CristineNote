@@ -2,6 +2,8 @@ import SwiftUI
 
 struct TransactionListView: View {
     @EnvironmentObject var dataManager: DataManager
+    @EnvironmentObject var translationService: TranslationService
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var selectedPeriod: StatisticsPeriod = .thisMonth
     @State private var searchText = ""
     @State private var customStartDate = Calendar.current.startOfDay(for: Date())
@@ -10,6 +12,7 @@ struct TransactionListView: View {
     @State private var showingDeleteAlert = false
     @State private var transactionToDelete: Transaction?
     @State private var selectedTransaction: Transaction?
+    @State private var editingTransaction: Transaction?
 
     private var filteredTransactions: [Transaction] {
         let transactions = dataManager.getTransactions(for: selectedPeriod, customStartDate: customStartDate, customEndDate: customEndDate)
@@ -24,7 +27,8 @@ struct TransactionListView: View {
             return filtered.sorted { $0.date > $1.date }
         } else {
             return filtered.filter { transaction in
-                transaction.note.localizedCaseInsensitiveContains(searchText) ||
+                let displayNote = transaction.displayNote(localizationManager: localizationManager)
+                return displayNote.localizedCaseInsensitiveContains(searchText) ||
                 transaction.category.displayName(for: dataManager).localizedCaseInsensitiveContains(searchText)
             }.sorted { $0.date > $1.date }
         }
@@ -112,17 +116,29 @@ struct TransactionListView: View {
                     ForEach(groupedTransactions, id: \.0) { date, transactions in
                         Section(header: DateHeaderView(date: date)) {
                             ForEach(transactions) { transaction in
-                                TransactionRowView(transaction: transaction)
+                                TransactionRowView(transaction: transaction, showIcons: true)
+                                    .environmentObject(localizationManager)
                                     .onTapGesture {
                                         selectedTransaction = transaction
                                     }
-                            }
-                            .onDelete { indexSet in
-                                for index in indexSet {
-                                    let transaction = transactions[index]
-                                    transactionToDelete = transaction
-                                    showingDeleteAlert = true
-                                }
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        // 编辑按钮
+                                        Button(action: {
+                                            editingTransaction = transaction
+                                        }) {
+                                            Image(systemName: "pencil")
+                                        }
+                                        .tint(.orange)
+                                        
+                                        // 删除按钮
+                                        Button(action: {
+                                            transactionToDelete = transaction
+                                            showingDeleteAlert = true
+                                        }) {
+                                            Image(systemName: "trash")
+                                        }
+                                        .tint(.red)
+                                    }
                             }
                         }
                     }
@@ -137,16 +153,16 @@ struct TransactionListView: View {
         .navigationTitle(LocalizedString("transaction_records"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button(action: {
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                }) {
-                    Image(systemName: "keyboard.chevron.compact.down")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.gray)
-                }
-            }
+                                ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button(action: {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }) {
+                            Image(systemName: "keyboard.chevron.compact.down")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                    }
         }
         .onAppear {
             // 确保导航栏背景正常显示
@@ -158,6 +174,13 @@ struct TransactionListView: View {
         .sheet(item: $selectedTransaction) { transaction in
             TransactionDetailView(transaction: transaction)
                 .environmentObject(dataManager)
+                .environmentObject(localizationManager)
+        }
+        .sheet(item: $editingTransaction) { transaction in
+            EditTransactionView(transaction: transaction)
+                .environmentObject(dataManager)
+                .environmentObject(translationService)
+                .environmentObject(localizationManager)
         }
         .alert(LocalizedString("delete_transaction"), isPresented: $showingDeleteAlert) {
             Button(LocalizedString("cancel"), role: .cancel) { 

@@ -2,6 +2,8 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var dataManager: DataManager
+    @EnvironmentObject var translationService: TranslationService
+    @EnvironmentObject var localizationManager: LocalizationManager
     @State private var showingAddTransaction = false
     @State private var selectedPeriod: StatisticsPeriod = .thisMonth
 
@@ -20,6 +22,8 @@ struct HomeView: View {
                         // 最近交易
                         RecentTransactionsSection()
                             .environmentObject(dataManager)
+                            .environmentObject(translationService)
+                            .environmentObject(localizationManager)
                     }
                     .padding()
                     .padding(.top, 8) // 为浮动按钮留出空间
@@ -53,6 +57,8 @@ struct HomeView: View {
             .sheet(isPresented: $showingAddTransaction) {
                 AddTransactionView()
                     .environmentObject(dataManager)
+                    .environmentObject(translationService)
+                    .environmentObject(localizationManager)
             }
         }
         .navigationViewStyle(StackNavigationViewStyle()) // 确保在iPad上也使用栈式导航
