@@ -16,6 +16,13 @@ struct EditTransactionView: View {
     @State private var englishNote: String = ""
     @State private var date: Date
     @State private var isSaving: Bool = false
+    
+    // 跟踪翻译状态
+    @State private var chineseNoteWasTranslated: Bool = false
+    @State private var englishNoteWasTranslated: Bool = false
+    
+    // 焦点状态
+    @FocusState private var amountFieldFocused: Bool
 
     private var categories: [TransactionCategory] {
         selectedType == .expense ? dataManager.expenseCategories : dataManager.incomeCategories
@@ -49,6 +56,10 @@ struct EditTransactionView: View {
             self._englishNote = State(initialValue: "")
         }
         
+        // 初始化翻译状态
+        self._chineseNoteWasTranslated = State(initialValue: transaction.isChineseNoteTranslated)
+        self._englishNoteWasTranslated = State(initialValue: transaction.isEnglishNoteTranslated)
+        
         self._date = State(initialValue: transaction.date)
     }
 
@@ -58,34 +69,102 @@ struct EditTransactionView: View {
                 // 顶部类型选择器
                 TypeSelector(selectedType: $selectedType)
                     .onChange(of: selectedType) { _ in
-                        selectedCategory = categories.first { $0.type == selectedType }
+                        // 检查当前选择的分类是否匹配新类型，如果不匹配才切换到默认分类
+                        if let currentCategory = selectedCategory, currentCategory.type == selectedType {
+                            // 当前分类类型匹配，保持不变
+                            return
+                        } else {
+                            // 当前分类不匹配或为空，选择该类型的第一个分类
+                            selectedCategory = categories.first { $0.type == selectedType }
+                        }
                     }
 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // 金额输入
-                        AmountInputSection(amount: $amount)
-                            .environmentObject(dataManager)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // 金额输入
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(LocalizedString("amount"))
+                                    .font(.system(.headline, weight: .semibold))
 
-                        // 分类选择
-                        CategorySelectionSection(
-                            categories: categories,
-                            selectedCategory: $selectedCategory
-                        )
+                                HStack {
+                                    // 显示当前系统货币符号，不可选择
+                                    Text(dataManager.currentSystemCurrency.symbol)
+                                        .font(.system(size: 28, weight: .medium))
+                                        .foregroundColor(.primary)
+                                        .padding(.horizontal, 8)
 
-                        // 备注输入
-                        BilingualNoteInputSection(
-                            note: $note,
-                            chineseNote: $chineseNote,
-                            englishNote: $englishNote
-                        )
-                        .environmentObject(translationService)
-                        .environmentObject(localizationManager)
+                                    TextField(LocalizedString("enter_amount"), text: $amount)
+                                        .font(.system(size: 28, weight: .medium, design: .rounded))
+                                        .keyboardType(.decimalPad)
+                                        .textFieldStyle(PlainTextFieldStyle())
+                                        .focused($amountFieldFocused)
+                                        .onChange(of: amountFieldFocused) { focused in
+                                            if focused {
+                                                withAnimation(.easeInOut(duration: 0.3)) {
+                                                    proxy.scrollTo("amountSection", anchor: .center)
+                                                }
+                                            }
+                                        }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color(.systemGray6))
+                                )
+                            }
+                            .id("amountSection")
 
-                        // 日期选择
-                        DateSelectionSection(date: $date)
+                            // 分类选择
+                            CategorySelectionSection(
+                                categories: categories,
+                                selectedCategory: $selectedCategory
+                            )
+                            .id("categorySection")
+
+                            // 备注输入
+                            BilingualNoteInputSection(
+                                note: $note,
+                                chineseNote: $chineseNote,
+                                englishNote: $englishNote,
+                                onChineseNoteTranslated: {
+                                    chineseNoteWasTranslated = true
+                                },
+                                onEnglishNoteTranslated: {
+                                    englishNoteWasTranslated = true
+                                },
+                                onFocusChanged: {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        proxy.scrollTo("noteSection", anchor: .center)
+                                    }
+                                }
+                            )
+                            .environmentObject(translationService)
+                            .environmentObject(localizationManager)
+                            .onChange(of: chineseNote) { newValue in
+                                // 如果用户手动清空了备注，重置翻译状态
+                                if newValue.isEmpty {
+                                    chineseNoteWasTranslated = false
+                                }
+                            }
+                            .onChange(of: englishNote) { newValue in
+                                // 如果用户手动清空了备注，重置翻译状态
+                                if newValue.isEmpty {
+                                    englishNoteWasTranslated = false
+                                }
+                            }
+                            .id("noteSection")
+
+                            // 日期选择
+                            DateSelectionSection(date: $date)
+                                .id("dateSection")
+                                
+                            // 添加底部间距以确保内容不被键盘遮挡
+                            Spacer(minLength: 300)
+                        }
+                        .padding()
                     }
-                    .padding()
                 }
             }
             .navigationTitle(LocalizedString("edit_transaction"))
@@ -125,8 +204,9 @@ struct EditTransactionView: View {
             }
         }
         .onAppear {
-            if let firstCategory = categories.first(where: { $0.type == selectedType }) {
-                selectedCategory = firstCategory
+            // 只有当选择的分类为空或者类型不匹配时，才设置默认分类
+            if selectedCategory == nil || selectedCategory?.type != selectedType {
+                selectedCategory = categories.first(where: { $0.type == selectedType })
             }
         }
     }
@@ -153,36 +233,16 @@ struct EditTransactionView: View {
         let finalEnglishNote = englishNote.isEmpty ? nil : englishNote
         
         // 判断翻译标识
-        // 对于编辑，我们保持原有的翻译标识，除非备注完全改变
-        var isChineseNoteTranslated = transaction.isChineseNoteTranslated
-        var isEnglishNoteTranslated = transaction.isEnglishNoteTranslated
+        var isChineseNoteTranslated = chineseNoteWasTranslated
+        var isEnglishNoteTranslated = englishNoteWasTranslated
         
-        // 如果中英文备注都存在，保持原有标识
-        // 如果只有一个备注，根据当前系统语言设置标识
+        // 如果只有单一语言的备注，不是翻译
         if finalChineseNote != nil && finalEnglishNote == nil {
-            // 只有中文备注
             isChineseNoteTranslated = false
             isEnglishNoteTranslated = false
         } else if finalEnglishNote != nil && finalChineseNote == nil {
-            // 只有英文备注
             isEnglishNoteTranslated = false
             isChineseNoteTranslated = false
-        } else if finalChineseNote != nil && finalEnglishNote != nil {
-            // 有双语备注，检查是否有新的翻译
-            let originalChineseNote = transaction.chineseNote ?? ""
-            let originalEnglishNote = transaction.englishNote ?? ""
-            
-            // 如果备注内容发生变化，可能是用户手动修改或新翻译
-            // 这里我们保持原有标识，除非用户明确进行了翻译操作
-            // 由于编辑页面有翻译功能，我们假设如果内容变化了，保持原有的翻译状态
-            if originalChineseNote != chineseNote {
-                // 中文备注变化了，检查是否可能是翻译产生的
-                // 这里保持原有逻辑
-            }
-            if originalEnglishNote != englishNote {
-                // 英文备注变化了，检查是否可能是翻译产生的
-                // 这里保持原有逻辑
-            }
         }
 
         let updatedTransaction = Transaction(

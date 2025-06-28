@@ -5,11 +5,13 @@ struct FocusableTextEditor: View {
     let placeholder: String
     @FocusState private var isFocused: Bool
     let id: String
+    var onFocusChanged: ((Bool) -> Void)?
     
-    init(text: Binding<String>, placeholder: String, id: String = UUID().uuidString) {
+    init(text: Binding<String>, placeholder: String, id: String = UUID().uuidString, onFocusChanged: ((Bool) -> Void)? = nil) {
         self._text = text
         self.placeholder = placeholder
         self.id = id
+        self.onFocusChanged = onFocusChanged
     }
     
     var body: some View {
@@ -46,6 +48,9 @@ struct FocusableTextEditor: View {
                 .focused($isFocused)
                 .onTapGesture {
                     isFocused = true
+                }
+                .onChange(of: isFocused) { focused in
+                    onFocusChanged?(focused)
                 }
                 .id(id)
         }
@@ -171,6 +176,20 @@ struct BilingualNoteInputSection: View {
     @State private var isTranslating: Bool = false
     @State private var showTranslateCheckmark: Bool = false
     
+    // 翻译状态回调
+    var onChineseNoteTranslated: (() -> Void)?
+    var onEnglishNoteTranslated: (() -> Void)?
+    var onFocusChanged: (() -> Void)?
+    
+    init(note: Binding<String>, chineseNote: Binding<String>, englishNote: Binding<String>, onChineseNoteTranslated: (() -> Void)? = nil, onEnglishNoteTranslated: (() -> Void)? = nil, onFocusChanged: (() -> Void)? = nil) {
+        self._note = note
+        self._chineseNote = chineseNote
+        self._englishNote = englishNote
+        self.onChineseNoteTranslated = onChineseNoteTranslated
+        self.onEnglishNoteTranslated = onEnglishNoteTranslated
+        self.onFocusChanged = onFocusChanged
+    }
+    
     // 计算当前系统语言是否为中文
     private var isChineseSystem: Bool {
         localizationManager.currentLanguage.hasPrefix("zh")
@@ -194,72 +213,70 @@ struct BilingualNoteInputSection: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            VStack(alignment: .leading, spacing: 16) {
-                Text(LocalizedString("note"))
-                    .font(.system(.headline, weight: .semibold))
+        VStack(alignment: .leading, spacing: 16) {
+            Text(LocalizedString("note"))
+                .font(.system(.headline, weight: .semibold))
+            
+            // 第一个输入框：系统语言对应的输入框
+            VStack(alignment: .leading, spacing: 8) {
+                Text(primaryLanguageLabel)
+                    .font(.system(.subheadline, weight: .medium))
+                    .foregroundColor(.primary)
                 
-                // 第一个输入框：系统语言对应的输入框
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(primaryLanguageLabel)
+                FocusableTextEditor(
+                    text: isChineseSystem ? $chineseNote : $englishNote,
+                    placeholder: primaryLanguagePlaceholder,
+                    id: "primaryNote",
+                    onFocusChanged: { focused in
+                        if focused {
+                            onFocusChanged?()
+                        }
+                    }
+                )
+                .id("primaryNote")
+            }
+            
+            // 第二个输入框：翻译语言的输入框，带翻译按钮
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(secondaryLanguageLabel)
                         .font(.system(.subheadline, weight: .medium))
                         .foregroundColor(.primary)
+                        .padding(.top, 10)
                     
-                    FocusableTextEditor(
-                        text: isChineseSystem ? $chineseNote : $englishNote,
-                        placeholder: primaryLanguagePlaceholder,
-                        id: "primaryNote"
-                    )
-                    .id("primaryNote")
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo("primaryNote", anchor: .bottom)
+                    Spacer()
+                    
+                    Button(action: {
+                        translateNote()
+                    }) {
+                        if isTranslating {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else if showTranslateCheckmark {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.green)
+                        } else {
+                            Text(LocalizedString("translate"))
+                                .font(.system(size: 14, weight: .medium))
                         }
                     }
+                    .foregroundColor((isChineseSystem ? chineseNote.isEmpty : englishNote.isEmpty) ? .gray : .blue)
+                    .disabled((isChineseSystem ? chineseNote.isEmpty : englishNote.isEmpty) || isTranslating)
+                    .buttonStyle(.plain)
                 }
                 
-                // 第二个输入框：翻译语言的输入框，带翻译按钮
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text(secondaryLanguageLabel)
-                            .font(.system(.subheadline, weight: .medium))
-                            .foregroundColor(.primary)
-                            .padding(.top, 10)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            translateNote()
-                        }) {
-                            if isTranslating {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else if showTranslateCheckmark {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.green)
-                            } else {
-                                Text(LocalizedString("translate"))
-                                    .font(.system(size: 14, weight: .medium))
-                            }
-                        }
-                        .foregroundColor((isChineseSystem ? chineseNote.isEmpty : englishNote.isEmpty) ? .gray : .blue)
-                        .disabled((isChineseSystem ? chineseNote.isEmpty : englishNote.isEmpty) || isTranslating)
-                        .buttonStyle(.plain)
-                    }
-                    
-                    FocusableTextEditor(
-                        text: isChineseSystem ? $englishNote : $chineseNote,
-                        placeholder: secondaryLanguagePlaceholder,
-                        id: "secondaryNote"
-                    )
-                    .id("secondaryNote")
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo("secondaryNote", anchor: .bottom)
+                FocusableTextEditor(
+                    text: isChineseSystem ? $englishNote : $chineseNote,
+                    placeholder: secondaryLanguagePlaceholder,
+                    id: "secondaryNote",
+                    onFocusChanged: { focused in
+                        if focused {
+                            onFocusChanged?()
                         }
                     }
-                }
+                )
+                .id("secondaryNote")
             }
         }
     }
@@ -285,8 +302,12 @@ struct BilingualNoteInputSection: View {
                 await MainActor.run {
                     if isChineseSystem {
                         englishNote = translated
+                        // 通知英文备注是翻译产生的
+                        onEnglishNoteTranslated?()
                     } else {
                         chineseNote = translated
+                        // 通知中文备注是翻译产生的
+                        onChineseNoteTranslated?()
                     }
                     
                     // 更新主要的note字段为当前语言的内容
