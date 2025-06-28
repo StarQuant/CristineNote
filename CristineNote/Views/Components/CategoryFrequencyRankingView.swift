@@ -236,7 +236,7 @@ struct CategoryFrequencyRankingView_Previews: PreviewProvider {
             customStartDate: Date(),
             customEndDate: Date(),
             selectedType: .expense
-        )
+                )
         .environmentObject(DataManager())
         .padding()
     }

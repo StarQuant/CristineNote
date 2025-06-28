@@ -51,49 +51,47 @@ class TranslationService: ObservableObject {
             self.isTranslating = true
         }
 
-        defer {
-            Task { @MainActor in
-                self.isTranslating = false
+        do {
+            let prompt = "请将以下文本翻译成中文，只返回翻译结果，不要添加任何解释：\(text)"
+
+            let requestBody: [String: Any] = [
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    [
+                        "role": "user",
+                        "content": prompt
+                    ]
+                ],
+                "max_tokens": 100,
+                "temperature": 0.3
+            ]
+
+            guard let url = URL(string: baseURL) else {
+                await MainActor.run { self.isTranslating = false }
+                throw TranslationError.invalidURL
             }
-        }
 
-        let prompt = "请将以下文本翻译成中文，只返回翻译结果，不要添加任何解释：\(text)"
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(getAPIKey() ?? "")", forHTTPHeaderField: "Authorization")
 
-        let requestBody: [String: Any] = [
-            "model": "gpt-3.5-turbo",
-            "messages": [
-                [
-                    "role": "user",
-                    "content": prompt
-                ]
-            ],
-            "max_tokens": 100,
-            "temperature": 0.3
-        ]
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+            } catch {
+                await MainActor.run { self.isTranslating = false }
+                throw TranslationError.encodingError
+            }
 
-        guard let url = URL(string: baseURL) else {
-            throw TranslationError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(getAPIKey() ?? "")", forHTTPHeaderField: "Authorization")
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
-        } catch {
-            throw TranslationError.encodingError
-        }
-
-        do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
+                await MainActor.run { self.isTranslating = false }
                 throw TranslationError.invalidResponse
             }
 
             guard httpResponse.statusCode == 200 else {
+                await MainActor.run { self.isTranslating = false }
                 throw TranslationError.apiError(httpResponse.statusCode)
             }
 
@@ -103,14 +101,19 @@ class TranslationService: ObservableObject {
                   let firstChoice = choices.first,
                   let message = firstChoice["message"] as? [String: Any],
                   let content = message["content"] as? String else {
+                await MainActor.run { self.isTranslating = false }
                 throw TranslationError.parseError
             }
 
-            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let result = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            await MainActor.run { self.isTranslating = false }
+            return result
 
         } catch let error as TranslationError {
+            await MainActor.run { self.isTranslating = false }
             throw error
         } catch {
+            await MainActor.run { self.isTranslating = false }
             throw TranslationError.networkError(error)
         }
     }
@@ -125,49 +128,47 @@ class TranslationService: ObservableObject {
             self.isTranslating = true
         }
 
-        defer {
-            Task { @MainActor in
-                self.isTranslating = false
+        do {
+            let prompt = "请将以下中文词汇翻译成对应的英文单词或短语，只返回英文翻译结果，不要添加任何解释或标点符号：\(text)"
+
+            let requestBody: [String: Any] = [
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    [
+                        "role": "user",
+                        "content": prompt
+                    ]
+                ],
+                "max_tokens": 50,
+                "temperature": 0.1
+            ]
+
+            guard let url = URL(string: baseURL) else {
+                await MainActor.run { self.isTranslating = false }
+                throw TranslationError.invalidURL
             }
-        }
 
-        let prompt = "请将以下中文词汇翻译成对应的英文单词或短语，只返回英文翻译结果，不要添加任何解释或标点符号：\(text)"
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(getAPIKey() ?? "")", forHTTPHeaderField: "Authorization")
 
-        let requestBody: [String: Any] = [
-            "model": "gpt-3.5-turbo",
-            "messages": [
-                [
-                    "role": "user",
-                    "content": prompt
-                ]
-            ],
-            "max_tokens": 50,
-            "temperature": 0.1
-        ]
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+            } catch {
+                await MainActor.run { self.isTranslating = false }
+                throw TranslationError.encodingError
+            }
 
-        guard let url = URL(string: baseURL) else {
-            throw TranslationError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(getAPIKey() ?? "")", forHTTPHeaderField: "Authorization")
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
-        } catch {
-            throw TranslationError.encodingError
-        }
-
-        do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
+                await MainActor.run { self.isTranslating = false }
                 throw TranslationError.invalidResponse
             }
 
             guard httpResponse.statusCode == 200 else {
+                await MainActor.run { self.isTranslating = false }
                 throw TranslationError.apiError(httpResponse.statusCode)
             }
 
@@ -177,14 +178,19 @@ class TranslationService: ObservableObject {
                   let firstChoice = choices.first,
                   let message = firstChoice["message"] as? [String: Any],
                   let content = message["content"] as? String else {
+                await MainActor.run { self.isTranslating = false }
                 throw TranslationError.parseError
             }
 
-            return content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let result = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            await MainActor.run { self.isTranslating = false }
+            return result
 
         } catch let error as TranslationError {
+            await MainActor.run { self.isTranslating = false }
             throw error
         } catch {
+            await MainActor.run { self.isTranslating = false }
             throw TranslationError.networkError(error)
         }
     }
@@ -205,14 +211,14 @@ class TranslationService: ObservableObject {
             self.isTranslating = true
         }
 
-        defer {
-            Task { @MainActor in
-                self.isTranslating = false
-            }
+        do {
+            let result = try translateWithBasicDictionary(text, from: sourceLanguage, to: targetLanguage)
+            await MainActor.run { self.isTranslating = false }
+            return result
+        } catch {
+            await MainActor.run { self.isTranslating = false }
+            throw error
         }
-
-        // 使用基础词典翻译作为备选方案
-        return try translateWithBasicDictionary(text, from: sourceLanguage, to: targetLanguage)
     }
 
     // 基础词典翻译（作为最后的fallback）

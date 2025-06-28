@@ -47,10 +47,16 @@ struct FocusableTextEditor: View {
                 )
                 .focused($isFocused)
                 .onTapGesture {
-                    isFocused = true
+                    // 延迟焦点修改以避免Publishing错误
+                    DispatchQueue.main.async {
+                        isFocused = true
+                    }
                 }
                 .onChange(of: isFocused) { focused in
-                    onFocusChanged?(focused)
+                    // 延迟回调执行以避免Publishing错误
+                    DispatchQueue.main.async {
+                        onFocusChanged?(focused)
+                    }
                 }
                 .id(id)
         }
@@ -299,27 +305,38 @@ struct BilingualNoteInputSection: View {
                     translated = try await translationService.translateText(sourceText)
                 }
                 
+                // 分步骤更新状态，避免Publishing错误
                 await MainActor.run {
+                    // 第一步：更新翻译状态UI
+                    isTranslating = false
+                    showTranslateCheckmark = true
+                }
+                
+                // 第二步：延迟更新翻译结果
+                DispatchQueue.main.async {
                     if isChineseSystem {
                         englishNote = translated
+                    } else {
+                        chineseNote = translated
+                    }
+                    // 更新主要的note字段为当前语言的内容
+                    note = sourceText
+                }
+                
+                // 第三步：延迟调用回调通知
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if isChineseSystem {
                         // 通知英文备注是翻译产生的
                         onEnglishNoteTranslated?()
                     } else {
-                        chineseNote = translated
                         // 通知中文备注是翻译产生的
                         onChineseNoteTranslated?()
                     }
-                    
-                    // 更新主要的note字段为当前语言的内容
-                    note = sourceText
-                    
-                    isTranslating = false
-                    showTranslateCheckmark = true
-                    
-                    // 1.5秒后隐藏勾号
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        showTranslateCheckmark = false
-                    }
+                }
+                
+                // 第四步：延迟隐藏勾号
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    showTranslateCheckmark = false
                 }
             } catch {
                 await MainActor.run {

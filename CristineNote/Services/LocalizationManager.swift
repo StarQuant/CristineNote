@@ -1,20 +1,18 @@
 import Foundation
 import SwiftUI
 
-// 动态本地化管理器
-@MainActor
+// 动态本地化管理器 - 重构避免Publishing错误
 class LocalizationManager: ObservableObject {
     static let shared = LocalizationManager()
 
     @Published var currentLanguage: String = "zh-Hans" {
         didSet {
-            UserDefaults.standard.set(currentLanguage, forKey: "selectedLanguage")
-            UserDefaults.standard.synchronize()
-            loadBundle()
+            updateLanguage()
         }
     }
 
     private var bundle: Bundle = Bundle.main
+    private let updateQueue = DispatchQueue(label: "LocalizationUpdate", qos: .userInitiated)
 
     private init() {
         // 从UserDefaults加载语言设置
@@ -38,6 +36,17 @@ class LocalizationManager: ObservableObject {
         loadBundle()
     }
 
+    private func updateLanguage() {
+        updateQueue.async { [weak self] in
+            UserDefaults.standard.set(self?.currentLanguage, forKey: "selectedLanguage")
+            UserDefaults.standard.synchronize()
+            
+            DispatchQueue.main.async {
+                self?.loadBundle()
+            }
+        }
+    }
+
     private func loadBundle() {
         if let path = Bundle.main.path(forResource: currentLanguage, ofType: "lproj"),
            let bundle = Bundle(path: path) {
@@ -46,33 +55,31 @@ class LocalizationManager: ObservableObject {
             self.bundle = Bundle.main
         }
 
-        // 通知所有观察者语言已改变
-        Task { @MainActor in
+        // 使用更安全的方式通知变化
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             self.objectWillChange.send()
         }
     }
 
-    nonisolated func localizedString(for key: String, comment: String = "") -> String {
-        // 使用 MainActor.assumeIsolated 来安全地访问 bundle 属性
-        let currentBundle = MainActor.assumeIsolated { bundle }
-        return NSLocalizedString(key, bundle: currentBundle, comment: comment)
+    // 线程安全的本地化方法
+    func localizedString(for key: String, comment: String = "") -> String {
+        return NSLocalizedString(key, bundle: bundle, comment: comment)
     }
 
     func setLanguage(_ language: String) {
-        currentLanguage = language
+        DispatchQueue.main.async {
+            self.currentLanguage = language
+        }
     }
 }
 
-// 便捷的本地化函数，替代NSLocalizedString
-@MainActor
+// 便捷的本地化函数 - 移除MainActor约束
 func LocalizedString(_ key: String, comment: String = "") -> String {
     return LocalizationManager.shared.localizedString(for: key, comment: comment)
 }
 
-// 为非主角色上下文提供的异步版本
+// 为异步上下文提供的版本
 func LocalizedStringAsync(_ key: String, comment: String = "") async -> String {
-    return await MainActor.run {
-        return LocalizationManager.shared.localizedString(for: key, comment: comment)
-    }
+    return LocalizationManager.shared.localizedString(for: key, comment: comment)
 }
 

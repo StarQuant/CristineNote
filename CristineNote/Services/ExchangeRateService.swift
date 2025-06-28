@@ -55,9 +55,12 @@ class ExchangeRateService: ObservableObject {
                 self.rates = allRates
                 self.lastUpdateTime = Date()
                 self.isLoading = false
-                // 强制触发UI更新
-                self.objectWillChange.send()
                 self.saveRates()
+            }
+            
+            // 延迟触发UI更新，避免Publishing错误
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
             }
         } catch {
             await MainActor.run {
@@ -98,9 +101,12 @@ class ExchangeRateService: ObservableObject {
             }
             rates[to.apiCode]?[from.apiCode] = 1.0 / rate
             
-            // 强制触发UI更新
-            objectWillChange.send()
             saveRates()
+            
+            // 延迟触发UI更新，避免Publishing错误
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
+            }
         }
     }
     

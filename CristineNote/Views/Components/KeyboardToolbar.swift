@@ -22,25 +22,21 @@ struct KeyboardToolbar: ViewModifier {
     }
 }
 
-// 独立的键盘收起按钮组件
+// 简化的键盘收起按钮 - 避免所有状态管理问题
 struct KeyboardDismissButton: View {
-    @StateObject private var keyboardObserver = KeyboardObserver()
-    
     var body: some View {
-        if keyboardObserver.isVisible {
-            Button(action: hideKeyboard) {
-                Image(systemName: "keyboard.chevron.compact.down")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
-                    .frame(width: 36, height: 36)
-                    .background(Color.gray.opacity(0.7))
-                    .clipShape(Circle())
-                    .shadow(radius: 3)
-            }
-            .padding(.trailing, 16)
-            .padding(.bottom, 16)
-            .transition(.opacity.combined(with: .scale))
+        // 始终显示的简单按钮，用户可以随时点击收起键盘
+        Button(action: hideKeyboard) {
+            Image(systemName: "keyboard.chevron.compact.down")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 36, height: 36)
+                .background(Color.gray.opacity(0.7))
+                .clipShape(Circle())
+                .shadow(radius: 3)
         }
+        .padding(.trailing, 16)
+        .padding(.bottom, 16)
     }
     
     private func hideKeyboard() {
@@ -50,37 +46,6 @@ struct KeyboardDismissButton: View {
             from: nil, 
             for: nil
         )
-    }
-}
-
-// 键盘状态监听器 - 全局共享
-class KeyboardObserver: ObservableObject {
-    @Published var isVisible = false
-    
-    init() {
-        NotificationCenter.default.addObserver(
-            forName: UIResponder.keyboardWillShowNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            withAnimation(.easeInOut(duration: 0.25)) {
-                self?.isVisible = true
-            }
-        }
-        
-        NotificationCenter.default.addObserver(
-            forName: UIResponder.keyboardWillHideNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            withAnimation(.easeInOut(duration: 0.25)) {
-                self?.isVisible = false
-            }
-        }
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 }
 

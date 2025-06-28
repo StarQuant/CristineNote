@@ -24,7 +24,10 @@ struct AddTransactionView: View {
                 // 顶部类型选择器
                 TypeSelector(selectedType: $selectedType)
                     .onChange(of: selectedType) { _ in
-                        selectedCategory = nil
+                        // 延迟状态更新以避免Publishing错误
+                        DispatchQueue.main.async {
+                            selectedCategory = nil
+                        }
                     }
 
                 ScrollView {
@@ -74,8 +77,11 @@ struct AddTransactionView: View {
             .keyboardToolbar()
         }
         .onAppear {
-            if let firstCategory = categories.first {
-                selectedCategory = firstCategory
+            // 延迟状态更新以避免Publishing错误
+            DispatchQueue.main.async {
+                if let firstCategory = categories.first {
+                    selectedCategory = firstCategory
+                }
             }
         }
     }

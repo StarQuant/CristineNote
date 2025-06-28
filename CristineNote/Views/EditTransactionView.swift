@@ -69,13 +69,16 @@ struct EditTransactionView: View {
                 // 顶部类型选择器
                 TypeSelector(selectedType: $selectedType)
                     .onChange(of: selectedType) { _ in
-                        // 检查当前选择的分类是否匹配新类型，如果不匹配才切换到默认分类
-                        if let currentCategory = selectedCategory, currentCategory.type == selectedType {
-                            // 当前分类类型匹配，保持不变
-                            return
-                        } else {
-                            // 当前分类不匹配或为空，选择该类型的第一个分类
-                            selectedCategory = categories.first { $0.type == selectedType }
+                        // 延迟状态更新以避免Publishing错误
+                        DispatchQueue.main.async {
+                            // 检查当前选择的分类是否匹配新类型，如果不匹配才切换到默认分类
+                            if let currentCategory = selectedCategory, currentCategory.type == selectedType {
+                                // 当前分类类型匹配，保持不变
+                                return
+                            } else {
+                                // 当前分类不匹配或为空，选择该类型的第一个分类
+                                selectedCategory = categories.first { $0.type == selectedType }
+                            }
                         }
                     }
 
@@ -99,13 +102,16 @@ struct EditTransactionView: View {
                                         .keyboardType(.decimalPad)
                                         .textFieldStyle(PlainTextFieldStyle())
                                         .focused($amountFieldFocused)
-                                        .onChange(of: amountFieldFocused) { focused in
-                                            if focused {
-                                                withAnimation(.easeInOut(duration: 0.3)) {
-                                                    proxy.scrollTo("amountSection", anchor: .center)
-                                                }
-                                            }
-                                        }
+                                                                .onChange(of: amountFieldFocused) { focused in
+                            if focused {
+                                // 延迟滚动以避免在视图更新期间的状态冲突
+                                DispatchQueue.main.async {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        proxy.scrollTo("amountSection", anchor: .center)
+                                    }
+                                }
+                            }
+                        }
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 12)
@@ -129,29 +135,44 @@ struct EditTransactionView: View {
                                 chineseNote: $chineseNote,
                                 englishNote: $englishNote,
                                 onChineseNoteTranslated: {
-                                    chineseNoteWasTranslated = true
+                                    // 延迟状态更新以避免Publishing错误
+                                    DispatchQueue.main.async {
+                                        chineseNoteWasTranslated = true
+                                    }
                                 },
                                 onEnglishNoteTranslated: {
-                                    englishNoteWasTranslated = true
+                                    // 延迟状态更新以避免Publishing错误
+                                    DispatchQueue.main.async {
+                                        englishNoteWasTranslated = true
+                                    }
                                 },
                                 onFocusChanged: {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        proxy.scrollTo("noteSection", anchor: .center)
+                                    // 延迟滚动以避免在视图更新期间的状态冲突
+                                    DispatchQueue.main.async {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            proxy.scrollTo("noteSection", anchor: .center)
+                                        }
                                     }
                                 }
                             )
                             .environmentObject(translationService)
                             .environmentObject(localizationManager)
                             .onChange(of: chineseNote) { newValue in
-                                // 如果用户手动清空了备注，重置翻译状态
-                                if newValue.isEmpty {
-                                    chineseNoteWasTranslated = false
+                                // 延迟状态更新以避免Publishing错误
+                                DispatchQueue.main.async {
+                                    // 如果用户手动清空了备注，重置翻译状态
+                                    if newValue.isEmpty {
+                                        chineseNoteWasTranslated = false
+                                    }
                                 }
                             }
                             .onChange(of: englishNote) { newValue in
-                                // 如果用户手动清空了备注，重置翻译状态
-                                if newValue.isEmpty {
-                                    englishNoteWasTranslated = false
+                                // 延迟状态更新以避免Publishing错误
+                                DispatchQueue.main.async {
+                                    // 如果用户手动清空了备注，重置翻译状态
+                                    if newValue.isEmpty {
+                                        englishNoteWasTranslated = false
+                                    }
                                 }
                             }
                             .id("noteSection")
@@ -193,9 +214,12 @@ struct EditTransactionView: View {
             .keyboardToolbar()
         }
         .onAppear {
-            // 只有当选择的分类为空或者类型不匹配时，才设置默认分类
-            if selectedCategory == nil || selectedCategory?.type != selectedType {
-                selectedCategory = categories.first(where: { $0.type == selectedType })
+            // 延迟状态更新以避免Publishing错误
+            DispatchQueue.main.async {
+                // 只有当选择的分类为空或者类型不匹配时，才设置默认分类
+                if selectedCategory == nil || selectedCategory?.type != selectedType {
+                    selectedCategory = categories.first(where: { $0.type == selectedType })
+                }
             }
         }
     }

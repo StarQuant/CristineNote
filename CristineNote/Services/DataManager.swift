@@ -20,7 +20,10 @@ class DataManager: ObservableObject {
     
     init() {
         validateDataIntegrity()
-        loadData()
+        // 异步加载数据以避免Publishing错误
+        DispatchQueue.main.async {
+            self.loadData()
+        }
     }
     
     // MARK: - 数据完整性检查
@@ -47,27 +50,44 @@ class DataManager: ObservableObject {
     private func loadTransactions() {
         if let data = UserDefaults.standard.data(forKey: transactionsKey),
            let savedTransactions = try? JSONDecoder().decode([Transaction].self, from: data) {
-            transactions = savedTransactions
+            // 异步更新状态以避免Publishing错误
+            DispatchQueue.main.async {
+                self.transactions = savedTransactions
+            }
         }
     }
     
     private func loadCategories() {
         // 加载支出分类
+        var loadedExpenseCategories: [TransactionCategory] = []
         if let data = UserDefaults.standard.data(forKey: expenseCategoriesKey),
            let savedCategories = try? JSONDecoder().decode([TransactionCategory].self, from: data) {
-            expenseCategories = savedCategories
+            loadedExpenseCategories = savedCategories
         } else {
-            expenseCategories = createDefaultExpenseCategories()
-            saveCategories()
+            loadedExpenseCategories = createDefaultExpenseCategories()
+            // 在后台保存默认分类
+            DispatchQueue.global(qos: .background).async {
+                self.saveCategories()
+            }
         }
         
         // 加载收入分类
+        var loadedIncomeCategories: [TransactionCategory] = []
         if let data = UserDefaults.standard.data(forKey: incomeCategoriesKey),
            let savedCategories = try? JSONDecoder().decode([TransactionCategory].self, from: data) {
-            incomeCategories = savedCategories
+            loadedIncomeCategories = savedCategories
         } else {
-            incomeCategories = createDefaultIncomeCategories()
-            saveCategories()
+            loadedIncomeCategories = createDefaultIncomeCategories()
+            // 在后台保存默认分类
+            DispatchQueue.global(qos: .background).async {
+                self.saveCategories()
+            }
+        }
+        
+        // 异步更新状态以避免Publishing错误
+        DispatchQueue.main.async {
+            self.expenseCategories = loadedExpenseCategories
+            self.incomeCategories = loadedIncomeCategories
         }
     }
     
@@ -389,9 +409,11 @@ class DataManager: ObservableObject {
     }
     
     // MARK: - 语言设置
-    @MainActor private func loadLanguage() {
+    private func loadLanguage() {
+        var loadedLanguage = "zh-Hans"
+        
         if let savedLanguage = UserDefaults.standard.string(forKey: languageKey) {
-            currentLanguage = savedLanguage
+            loadedLanguage = savedLanguage
         } else {
             // 默认根据系统语言设置
             let systemLanguage: String?
@@ -402,23 +424,34 @@ class DataManager: ObservableObject {
             }
             
             if let lang = systemLanguage {
-                currentLanguage = lang == "zh" ? "zh-Hans" : "en"
-            } else {
-                currentLanguage = "zh-Hans"
+                loadedLanguage = lang == "zh" ? "zh-Hans" : "en"
             }
-            saveLanguage()
+            
+            // 在后台保存语言设置
+            DispatchQueue.global(qos: .background).async {
+                self.saveLanguage()
+            }
         }
         
-        // 同步到LocalizationManager
-        LocalizationManager.shared.setLanguage(currentLanguage)
+        // 异步更新状态以避免Publishing错误
+        DispatchQueue.main.async {
+            self.currentLanguage = loadedLanguage
+            // 同步到LocalizationManager
+            LocalizationManager.shared.setLanguage(loadedLanguage)
+        }
     }
     
-    @MainActor func setLanguage(_ language: String) {
-        currentLanguage = language
-        saveLanguage()
+    func setLanguage(_ language: String) {
+        DispatchQueue.main.async {
+            self.currentLanguage = language
+            // 同步到LocalizationManager
+            LocalizationManager.shared.setLanguage(language)
+        }
         
-        // 同步到LocalizationManager
-        LocalizationManager.shared.setLanguage(language)
+        // 在后台保存
+        DispatchQueue.global(qos: .background).async {
+            self.saveLanguage()
+        }
     }
     
     private func saveLanguage() {
@@ -428,16 +461,29 @@ class DataManager: ObservableObject {
     
     // MARK: - 系统货币设置
     private func loadSystemCurrency() {
+        var loadedCurrency = Currency.defaultCurrency
+        
         if let currencyString = UserDefaults.standard.string(forKey: systemCurrencyKey),
            let currency = Currency(rawValue: currencyString) {
-            currentSystemCurrency = currency
+            loadedCurrency = currency
+        }
+        
+        // 异步更新状态以避免Publishing错误
+        DispatchQueue.main.async {
+            self.currentSystemCurrency = loadedCurrency
         }
     }
     
     func setSystemCurrency(_ currency: Currency) {
-        currentSystemCurrency = currency
-        UserDefaults.standard.set(currency.rawValue, forKey: systemCurrencyKey)
-        UserDefaults.standard.synchronize()
+        DispatchQueue.main.async {
+            self.currentSystemCurrency = currency
+        }
+        
+        // 在后台保存
+        DispatchQueue.global(qos: .background).async {
+            UserDefaults.standard.set(currency.rawValue, forKey: self.systemCurrencyKey)
+            UserDefaults.standard.synchronize()
+        }
     }
     
     // 格式化交易金额（按系统币种显示）
