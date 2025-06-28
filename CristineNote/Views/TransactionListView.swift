@@ -152,18 +152,6 @@ struct TransactionListView: View {
         }
         .navigationTitle(LocalizedString("transaction_records"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button(action: {
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                        }) {
-                            Image(systemName: "keyboard.chevron.compact.down")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.gray)
-                        }
-                    }
-        }
         .onAppear {
             // 确保导航栏背景正常显示
             let appearance = UINavigationBarAppearance()

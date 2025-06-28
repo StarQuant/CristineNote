@@ -189,18 +189,6 @@ struct EditTransactionView: View {
                     .foregroundColor(isFormValid && !isSaving ? .blue : .gray)
                     .disabled(!isFormValid || isSaving)
                 }
-                
-                // 键盘工具栏
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button(action: {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }) {
-                        Image(systemName: "keyboard.chevron.compact.down")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.gray)
-                    }
-                }
             }
         }
         .onAppear {
