@@ -17,6 +17,7 @@ class SyncNetworkManager: NSObject, ObservableObject {
     private var lastAdvertiserStopTime: Date?
     private var isResetting = false  // 防止重置过程中的重复操作
     private var componentId = UUID()  // 用于跟踪组件生命周期
+    private var targetDeviceInfo: QRCodeData?  // 目标设备信息（用于扫码后的自动连接）
     
     @Published var syncState: SyncState = .idle
     @Published var connectedPeers: [MCPeerID] = []
@@ -51,6 +52,7 @@ class SyncNetworkManager: NSObject, ObservableObject {
     
     /// 设置同步状态并通知观察者
     private func setSyncState(_ newState: SyncState) {
+        print("SyncNetworkManager.setSyncState: \(syncState) -> \(newState)")
         syncState = newState
         onSyncStateChanged?(newState)
     }
@@ -149,8 +151,6 @@ class SyncNetworkManager: NSObject, ObservableObject {
     }
     
     private func internalStartAdvertising(with deviceInfo: DeviceInfo) {
-        let currentId = componentId
-        
         // 防止在重置过程中启动
         guard !isResetting else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -162,11 +162,16 @@ class SyncNetworkManager: NSObject, ObservableObject {
         // 彻底重置所有状态
         resetForRetry()
         
+        // 重置后获取新的componentId
+        let currentId = componentId
+        
         // 延迟启动，给系统足够时间清理之前的资源
         let delay = 6.0 + Double(retryCount) * 3.0  // 进一步增加延迟时间
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self = self else { return }
-            guard currentId != self.componentId else {
+            // 如果componentId已经改变，说明已经被重置，应该取消这个延迟任务
+            guard currentId == self.componentId else {
+                print("Cancelling delayed advertising task - componentId changed")
                 return
             }
             
@@ -214,65 +219,77 @@ class SyncNetworkManager: NSObject, ObservableObject {
     }
     
 
+    /// 设置目标设备信息（从二维码扫描获得）
+    func setTargetDevice(_ qrCodeData: QRCodeData) {
+        targetDeviceInfo = qrCodeData
+        print("SyncNetworkManager: Set target device: \(qrCodeData.deviceName)")
+    }
     
     /// 开始搜索设备（扫描二维码模式）
-    func startBrowsing() {
+    func startBrowsing(useDelay: Bool = true) {
         let currentId = componentId
         
         // 防止在重置过程中启动
         guard !isResetting else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                self.startBrowsing()
+                self.startBrowsing(useDelay: useDelay)
             }
             return
         }
         
-        // 彻底重置状态
-        resetForRetry()
+        if useDelay {
+            // 彻底重置状态
+            resetForRetry()
+            
+            // 延迟启动以确保服务完全停止
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                guard let self = self else { return }
+                // 如果componentId已经改变，说明已经被重置，应该取消这个延迟任务
+                guard currentId == self.componentId else {
+                    print("Cancelling delayed browsing task - componentId changed")
+                    return
+                }
+                self.performBrowsing()
+            }
+        } else {
+            // 立即启动（用于扫码后的连接）
+            performBrowsing()
+        }
+    }
+    
+    private func performBrowsing() {
+        // 为浏览模式创建新的peer ID
+        let timestamp = Int(Date().timeIntervalSince1970) % 10000
+        self.peerId = MCPeerID(displayName: "S\(timestamp)")
         
-        // 延迟启动以确保服务完全停止
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-            guard let self = self else { return }
-            guard currentId != self.componentId else {
+        // 重新创建session
+        self.session = MCSession(
+            peer: self.peerId, 
+            securityIdentity: nil, 
+            encryptionPreference: .none
+        )
+        self.session.delegate = self
+        
+        // 等待session初始化
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // 创建新的browser
+            self.browser = MCNearbyServiceBrowser(
+                peer: self.peerId, 
+                serviceType: self.serviceType
+            )
+            
+            guard let browser = self.browser else {
+                self.setSyncState(.failed(SyncError.networkServiceUnavailable))
                 return
             }
             
+            browser.delegate = self
             
-            // 为浏览模式创建新的peer ID
-            let timestamp = Int(Date().timeIntervalSince1970) % 10000
-            self.peerId = MCPeerID(displayName: "S\(timestamp)")
-            
-            // 重新创建session
-            self.session = MCSession(
-                peer: self.peerId, 
-                securityIdentity: nil, 
-                encryptionPreference: .none
-            )
-            self.session.delegate = self
-            
-            // 等待session初始化
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                // 这里self不是可选，直接用self
-                
-                // 创建新的browser
-                self.browser = MCNearbyServiceBrowser(
-                    peer: self.peerId, 
-                    serviceType: self.serviceType
-                )
-                
-                guard let browser = self.browser else {
-                    self.setSyncState(.failed(SyncError.networkServiceUnavailable))
-                    return
-                }
-                
-                browser.delegate = self
-                
-                // 使用异步启动
-                Task {
-                    browser.startBrowsingForPeers()
-                    await MainActor.run {
-                        self.setSyncState(.browsing)
-                    }
+            // 使用异步启动
+            Task {
+                browser.startBrowsingForPeers()
+                await MainActor.run {
+                    self.setSyncState(.browsing)
                 }
             }
         }
@@ -307,6 +324,7 @@ class SyncNetworkManager: NSObject, ObservableObject {
     
     /// 停止所有服务
     func stopAll() {
+        print("SyncNetworkManager.stopAll() called")
         
         // 停止广播服务
         if let currentAdvertiser = advertiser {
@@ -329,6 +347,10 @@ class SyncNetworkManager: NSObject, ObservableObject {
         // 清理状态
         connectedPeers.removeAll()
         discoveredPeers.removeAll()
+        
+        // 更新componentId以取消所有延迟任务
+        componentId = UUID()
+        print("Updated componentId to cancel delayed tasks")
         
         if case .failed = syncState {
             // 保持错误状态
@@ -613,10 +635,18 @@ extension SyncNetworkManager: MCNearbyServiceBrowserDelegate {
             
             if !self.discoveredPeers.contains(peerID) {
                 self.discoveredPeers.append(peerID)
+                print("Found peer: \(peerID.displayName)")
                 
-                // 如果发现设备，自动尝试连接第一个
-                if self.discoveredPeers.count == 1 {
+                // 如果有目标设备信息，尝试智能匹配
+                if let targetDevice = self.targetDeviceInfo {
+                    // 由于PeerID是动态生成的，我们先连接然后在连接后验证设备信息
+                    print("Attempting to connect to peer \(peerID.displayName) for target device \(targetDevice.deviceName)")
                     self.connectTo(peer: peerID)
+                } else {
+                    // 没有目标设备信息，连接第一个发现的设备
+                    if self.discoveredPeers.count == 1 {
+                        self.connectTo(peer: peerID)
+                    }
                 }
             }
         }

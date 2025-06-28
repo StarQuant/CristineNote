@@ -15,6 +15,7 @@ class SyncService: ObservableObject {
     
     private var currentDeviceInfo: DeviceInfo
     private var lastOperation: SyncOperation?
+    private var targetDeviceInfo: QRCodeData?
     
     enum SyncOperation {
         case generateMode
@@ -44,7 +45,15 @@ class SyncService: ObservableObject {
     func startScanMode() {
         lastOperation = .scanMode
         currentDeviceInfo = DeviceInfo()
-        networkManager.startBrowsing()
+        // 扫码后立即启动，不使用延迟
+        networkManager.startBrowsing(useDelay: false)
+    }
+    
+    /// 设置目标设备信息（从二维码扫描获得）
+    func setTargetDevice(_ qrCodeData: QRCodeData) {
+        targetDeviceInfo = qrCodeData
+        networkManager.setTargetDevice(qrCodeData)
+        print("Set target device: \(qrCodeData.deviceName)")
     }
     
     /// 重试最后一次操作
@@ -73,9 +82,16 @@ class SyncService: ObservableObject {
     
     /// 重置状态
     func reset() {
+        print("SyncService.reset() called")
         stopSync()
         lastOperation = nil
         syncResult = .empty
+        
+        // 强制立即设置状态为idle，确保UI立即更新
+        DispatchQueue.main.async { [weak self] in
+            self?.syncState = .idle
+            print("SyncService.reset() - Force set syncState to idle")
+        }
     }
     
     /// 完全重置（解决组件重用问题）
@@ -91,10 +107,21 @@ class SyncService: ObservableObject {
     
     /// 停止同步
     func stopSync() {
+        print("SyncService.stopSync() called")
         networkManager.stopAll()
         isShowingProgress = false
         syncProgress = 0.0
         syncStatus = ""
+        // 清理同步结果，确保界面状态正确重置
+        syncResult = .empty
+        
+        // 确保状态被设置为idle（通过networkManager.stopAll()应该已经设置，这里是双重保险）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            if self?.syncState != .idle {
+                print("SyncService.stopSync() - Force setting state to idle")
+                self?.syncState = .idle
+            }
+        }
     }
     
     /// 获取连接的设备
@@ -122,6 +149,7 @@ class SyncService: ObservableObject {
         // 设置同步状态变化监听
         networkManager.onSyncStateChanged = { [weak self] newState in
             Task { @MainActor in
+                print("SyncService received state change from networkManager: \(newState)")
                 self?.syncState = newState
             }
         }
@@ -149,6 +177,8 @@ class SyncService: ObservableObject {
             switch message.type {
             case .deviceInfo:
                 await handleDeviceInfo(message.payload, from: peer)
+            case .syncStart:
+                await handleSyncStart(message.payload, from: peer)
             case .dataRequest:
                 await handleDataRequest(from: peer)
             case .dataResponse:
@@ -169,12 +199,41 @@ class SyncService: ObservableObject {
         }
     }
     
+    /// 处理对方发送的开始同步消息
+    private func handleSyncStart(_ data: Data, from peer: MCPeerID) async {
+        print("Received sync start signal from peer: \(peer.displayName)")
+        
+        // 检查是否已经在同步中，避免重复启动
+        guard !isShowingProgress && syncProgress == 0.0 else {
+            print("Already syncing, ignoring sync start signal")
+            return
+        }
+        
+        // 对方开始了同步，我们也立即开始（但不发送syncStart信号，避免循环）
+        await performStartDataSyncAsFollower()
+    }
+    
     private func performStartDataSync() async {
+        await performStartDataSyncInternal(sendStartSignal: true)
+    }
+    
+    private func performStartDataSyncAsFollower() async {
+        await performStartDataSyncInternal(sendStartSignal: false)
+    }
+    
+    private func performStartDataSyncInternal(sendStartSignal: Bool) async {
         isShowingProgress = true
         syncProgress = 0.1
         syncStatus = LocalizationManager.shared.localizedString(for: "sync_preparing")
         
         do {
+            if sendStartSignal {
+                // 0. 发送同步开始信号给对方（仅主动发起者发送）
+                let syncStartData = Data()
+                try networkManager.sendSyncMessage(type: .syncStart, payload: syncStartData)
+                print("Sent sync start signal to peer")
+            }
+            
             // 1. 发送设备信息
             let deviceInfoData = try JSONEncoder().encode(currentDeviceInfo)
             try networkManager.sendSyncMessage(type: .deviceInfo, payload: deviceInfoData)

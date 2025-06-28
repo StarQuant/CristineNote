@@ -67,10 +67,23 @@ struct DataSyncView: View {
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     .scaleEffect(0.8)
                                 Text(LocalizedString("waiting_connection"))
+                            } else if syncService.syncState == .connecting || syncService.syncState == .browsing {
+                                // 连接中状态
+                                ConnectingAnimation(color: .white)
+                                Text(LocalizedString("connecting"))
                             } else {
                                 Image(systemName: selectedMode == .generate ? "qrcode" : "qrcode.viewfinder")
                                 Text(selectedMode == .generate ? LocalizedString("generate_qr_code") : LocalizedString("scan_qr_code"))
                             }
+                        }
+                        .onAppear {
+                            print("Button state: isGeneratingQR=\(isGeneratingQR), syncState=\(syncService.syncState), selectedMode=\(selectedMode)")
+                        }
+                        .onChange(of: isGeneratingQR) { newValue in
+                            print("isGeneratingQR changed to: \(newValue)")
+                        }
+                        .onChange(of: syncService.syncState) { newState in
+                            print("Button observing syncState change to: \(newState)")
                         }
                         .font(.headline)
                         .foregroundColor(.white)
@@ -122,7 +135,13 @@ struct DataSyncView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingProgress) {
+        .sheet(isPresented: $showingProgress, onDismiss: {
+            // 确保在任何关闭情况下都断开连接
+            if syncService.syncProgress >= 1.0 {
+                print("Sync progress sheet dismissed, stopping sync")
+                syncService.stopSync()
+            }
+        }) {
             SyncProgressView(syncService: syncService, isPresented: $showingProgress)
         }
         .fullScreenCover(isPresented: $isGeneratingQR) {
@@ -137,11 +156,14 @@ struct DataSyncView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(LocalizedString("cancel")) {
-                            syncService.stopSync()
-                            resetGeneratingState()
+                            print("Cancel button tapped in QR view")
+                            // 一次性完全重置
+                            cancelCurrentOperation()
                         }
                     }
                 }
+                // 禁用下滑关闭功能，确保用户必须通过取消按钮关闭
+                .interactiveDismissDisabled()
             }
         }
         .alert(LocalizedString("camera_permission_needed"), isPresented: $showingPermissionAlert) {
@@ -162,8 +184,21 @@ struct DataSyncView: View {
                 // 连接成功后立即关闭QR生成界面
                 isGeneratingQR = false
                 print("Connection successful, closing QR view")
-            case .failed, .completed, .idle:
+            case .failed, .completed:
+                // 失败或完成时重置状态
                 resetGeneratingState()
+            case .idle:
+                // idle状态下，如果QR界面仍在显示，说明是异常情况，需要重置
+                // 正常的取消和下滑关闭会在各自的回调中处理
+                if isGeneratingQR {
+                    print("Unexpected idle state while QR view is showing, resetting")
+                    resetGeneratingState()
+                }
+                // 如果进度界面仍在显示，也需要关闭
+                if showingProgress {
+                    print("Connection disconnected, closing progress view")
+                    showingProgress = false
+                }
             default:
                 break
             }
@@ -181,18 +216,33 @@ struct DataSyncView: View {
     }
     
     private func resetGeneratingState() {
-        print("Resetting generating state")
+        print("Resetting generating state: isGeneratingQR=\(isGeneratingQR) -> false")
         isGeneratingQR = false
+    }
+    
+    private func cancelCurrentOperation() {
+        print("Cancelling current operation")
+        
+        // 1. 立即重置UI状态
+        isGeneratingQR = false
+        showingProgress = false
+        
+        // 2. 重置同步服务（这会停止网络服务并设置状态为idle）
+        syncService.reset()
+        
+        // 3. 添加延迟确保状态完全重置
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            print("Delayed reset confirmation: syncState=\(self.syncService.syncState)")
+        }
     }
     
     private func startSync() {
         print("Starting sync with mode: \(selectedMode)")
         
-        // 确保先重置状态
-        syncService.reset()
-        
         switch selectedMode {
         case .generate:
+            // 生成模式需要先重置状态
+            syncService.reset()
             // 重置设备信息并显示生成状态
             deviceInfo = DeviceInfo()
             isGeneratingQR = true
@@ -200,6 +250,7 @@ struct DataSyncView: View {
             syncService.startGenerateMode()
             
         case .scan:
+            // 扫描模式不在这里重置，而是在实际扫到二维码时重置
             checkCameraPermission { granted in
                 if granted {
                     showingQRScanner = true
@@ -211,12 +262,14 @@ struct DataSyncView: View {
     }
     
     private func handleQRCodeDetected(_ qrCodeData: QRCodeData) {
+        print("QR Code detected: \(qrCodeData.deviceName)")
         showingQRScanner = false
         
-        // 添加短暂延迟，确保sheet完全关闭后再开始同步
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            syncService.startScanMode()
-        }
+        // 保存扫描到的设备信息
+        syncService.setTargetDevice(qrCodeData)
+        
+        // 立即开始连接过程，显示连接动画
+        syncService.startScanMode()
     }
     
     private func checkCameraPermission(completion: @escaping (Bool) -> Void) {
@@ -359,9 +412,13 @@ struct SyncStatusCard: View {
                     .foregroundColor(.secondary)
                 Spacer()
                 
+                // 增强的连接动画
                 if syncService.syncState == .advertising || syncService.syncState == .browsing {
                     ProgressView()
                         .scaleEffect(0.8)
+                } else if syncService.syncState == .connecting {
+                    // 连接中的特殊动画
+                    ConnectingAnimation()
                 }
             }
             
@@ -439,7 +496,7 @@ struct SyncStatusCard: View {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
-                        Text("已连接: \(peer.displayName)")
+                        Text("\(LocalizedString("connected")): \(peer.displayName)")
                             .foregroundColor(.secondary)
                         Spacer()
                     }
@@ -474,6 +531,40 @@ struct SyncStatusCard: View {
         case .syncing: return .orange
         case .failed: return .red
         case .completed: return .green
+        }
+    }
+}
+
+// MARK: - 连接动画组件
+struct ConnectingAnimation: View {
+    @State private var isAnimating = false
+    let color: Color
+    
+    init(color: Color = .blue) {
+        self.color = color
+    }
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<3) { index in
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+                    .scaleEffect(isAnimating ? 1.0 : 0.5)
+                    .opacity(isAnimating ? 1.0 : 0.3)
+                    .animation(
+                        Animation.easeInOut(duration: 0.6)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.2),
+                        value: isAnimating
+                    )
+            }
+        }
+        .onAppear {
+            isAnimating = true
+        }
+        .onDisappear {
+            isAnimating = false
         }
     }
 } 

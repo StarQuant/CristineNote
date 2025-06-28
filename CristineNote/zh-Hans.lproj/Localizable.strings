@@ -323,4 +323,7 @@
 "exchange_rates_synced" = "汇率已同步";
 "currency_settings_synced" = "货币设置已同步";
 
+/* 双向同步启动 */
+"other_device_started_sync" = "对方设备已开始同步";
+
  

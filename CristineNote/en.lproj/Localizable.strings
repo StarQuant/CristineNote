@@ -323,4 +323,7 @@
 "exchange_rates_synced" = "Exchange Rates Synced";
 "currency_settings_synced" = "Currency Settings Synced";
 
+/* Bidirectional Sync Start */
+"other_device_started_sync" = "Other device has started sync";
+
  

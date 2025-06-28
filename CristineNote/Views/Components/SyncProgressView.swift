@@ -22,7 +22,7 @@ struct SyncProgressView: View {
                         .fill(Color(.systemBackground))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
-                    if syncService.syncState == .connected && !syncStarted {
+                    if syncService.syncState == .connected && !syncStarted && !syncService.isShowingProgress {
                         // 连接成功后的开始页面
                         StartSyncView(syncService: syncService, syncStarted: $syncStarted)
                     } else if syncStarted || syncService.isShowingProgress {
@@ -39,6 +39,8 @@ struct SyncProgressView: View {
                             HStack {
                                 Spacer()
                                 Button(action: {
+                                    // 关闭同步完成界面时断开连接
+                                    syncService.stopSync()
                                     isPresented = false
                                 }) {
                                     Image(systemName: "xmark")
@@ -71,6 +73,8 @@ struct SyncProgressView: View {
                 }
                 .onEnded { value in
                     if syncService.syncProgress >= 1.0 && value.translation.height > 100 {
+                        // 下滑关闭同步完成界面时断开连接
+                        syncService.stopSync()
                         isPresented = false
                     }
                 }
@@ -135,10 +139,18 @@ struct StartSyncView: View {
                 .animation(.easeInOut(duration: 0.1), value: syncStarted)
             }
             
-            Text(LocalizationManager.shared.localizedString(for: "tap_start_sync"))
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            // 动态提示文字
+            if syncService.isShowingProgress {
+                Text(LocalizationManager.shared.localizedString(for: "other_device_started_sync"))
+                    .font(.subheadline)
+                    .foregroundColor(.orange)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text(LocalizationManager.shared.localizedString(for: "tap_start_sync"))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
             
             Spacer()
         }

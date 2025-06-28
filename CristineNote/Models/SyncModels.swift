@@ -145,6 +145,7 @@ enum SyncMode: Equatable {
 // MARK: - 消息类型
 enum SyncMessageType: String, Codable {
     case deviceInfo = "device_info"
+    case syncStart = "sync_start"        // 新增：通知对方开始同步
     case dataRequest = "data_request"
     case dataResponse = "data_response"
     case syncComplete = "sync_complete"
