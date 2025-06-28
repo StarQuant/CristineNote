@@ -152,6 +152,7 @@ struct TransactionListView: View {
         }
         .navigationTitle(LocalizedString("transaction_records"))
         .navigationBarTitleDisplayMode(.inline)
+        .keyboardToolbar()
         .onAppear {
             // 确保导航栏背景正常显示
             let appearance = UINavigationBarAppearance()

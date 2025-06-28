@@ -239,6 +239,7 @@ struct ManualRateInputView: View {
                     .disabled(!isFormValid)
                 }
             }
+            .keyboardToolbar()
         }
         .onAppear {
             // 预填充当前汇率值

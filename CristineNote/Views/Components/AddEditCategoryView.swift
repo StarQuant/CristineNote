@@ -189,6 +189,7 @@ struct AddEditCategoryView: View {
                     .disabled(primaryLanguageName.isEmpty)
                 }
             }
+            .keyboardToolbar()
         }
         .onAppear {
             validateIcons()

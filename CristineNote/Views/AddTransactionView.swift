@@ -71,6 +71,7 @@ struct AddTransactionView: View {
                     .disabled(!isFormValid || isSaving)
                 }
             }
+            .keyboardToolbar()
         }
         .onAppear {
             if let firstCategory = categories.first {

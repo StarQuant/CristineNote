@@ -190,6 +190,7 @@ struct EditTransactionView: View {
                     .disabled(!isFormValid || isSaving)
                 }
             }
+            .keyboardToolbar()
         }
         .onAppear {
             // 只有当选择的分类为空或者类型不匹配时，才设置默认分类
